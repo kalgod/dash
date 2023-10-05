@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Custom addition to do comprehensive testing for ABR algorithm",
   "dependencies": {
+    "electron": "^26.2.4",
     "puppeteer": "^2.1.1",
     "puppeteer-core": "^2.1.1"
   },

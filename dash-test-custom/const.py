@@ -1,2 +1,2 @@
 TRACE=['fcc','oboe','norway','all_0']
-total_trace=10
+total_trace=45

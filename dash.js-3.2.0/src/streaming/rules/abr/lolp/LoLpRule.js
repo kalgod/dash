@@ -139,10 +139,10 @@ function LoLPRule(config) {
              * Select next quality
              */
             switchRequest.quality = learningController.getNextQuality(mediaInfo, throughput * 1000, latency, currentBufferLevel, playbackRate, currentQuality, dynamicWeightsSelector);
-            let bw_cur = throughputHistory.getDict()[mediaType]
-            let bw_tmp = Math.min(throughput / 0.9, bw_cur[bw_cur.length - 1])
-            console.log(throughput / 0.9, bw_tmp);
-            switchRequest.quality = abrController.getQualityForBitrate(mediaInfo, bw_tmp, latency);
+            // let bw_cur = throughputHistory.getDict()[mediaType]
+            // let bw_tmp = Math.min(throughput / 0.9, bw_cur[bw_cur.length - 1])
+            // console.log(throughput / 0.9, bw_tmp);
+            // switchRequest.quality = abrController.getQualityForBitrate(mediaInfo, bw_tmp, latency);
             switchRequest.reason = { throughput: throughput, latency: latency };
             switchRequest.priority = SwitchRequest.PRIORITY.STRONG;
 

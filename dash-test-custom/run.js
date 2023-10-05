@@ -204,16 +204,14 @@ sleep(waitSeconds * 1000).then(() => {
 
     const { exec } = require('child_process');
     tmp_comm = 'python3 trace_run.py ' + pre_path + dirs + '/' + trace + ' ./bw_truth/' + dirs + '/' + trace + "/" + alg;
-    console.log("%s", tmp_comm);
-    exec(tmp_comm);
+    // console.log("%s", tmp_comm);
+    // exec(tmp_comm);
     console.log("now1", Date.now());
-    if (alg.includes("moof")) {
-      await page.goto("file:///home/cjh/work/dash.js-3.2.0/samples/low-latency/lolp_index_moof.html");
-    }
-    else {
-      await page.goto("file:///home/cjh/work/dash.js-3.2.0/samples/low-latency/lolp_index_fusion.html");
-    }
-    console.log("now2", Date.now());
+
+    let targethtml = "file:///home/cjh/dash/dash.js-3.2.0/samples/low-latency/" + alg + ".html"
+    await page.goto(targethtml);
+
+    console.log("now2", Date.now(), targethtml);
     const cdpClient = await page.target().createCDPSession();
 
     // readTrace(cdpClient, traceData, './bw_truth/' + dirs + '/' + trace + "/" + alg);
