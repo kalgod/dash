@@ -626,13 +626,12 @@ function FetchLoader(cfg) {
         }
     }
 
-    function _calculateDownloadedTimeByMoofParsing(startTimeData, endTimeData, bytesReceived) {
+    function calculateThroughputByChunkData(startTimeData, endTimeData) {
         try {
-            let datum = startTimeData;
-            let datumE = endTimeData;
-            // Filter the first and last chunks in a segment in both arrays [StartTimeData and EndTimeData]
-            // datum = startTimeData.filter((data, i) => i < startTimeData.length - 1);
-            // datumE = endTimeData.filter((dataE, i) => i < endTimeData.length - 1);
+            let datum, datumE;
+            // Filter the last chunks in a segment in both arrays [StartTimeData and EndTimeData]
+            datum = startTimeData.filter((data, i) => i < startTimeData.length - 1);
+            datumE = endTimeData.filter((dataE, i) => i < endTimeData.length - 1);
             let chunkThroughputs = [];
             // Compute the average throughput of the filtered chunk data
             if (datum.length > 1) {
@@ -640,20 +639,19 @@ function FetchLoader(cfg) {
                 let shortDurationStartTime = 0;
                 for (let i = 0; i < datum.length; i++) {
                     if (datum[i] && datumE[i]) {
-                        console.log("index: ", i, "start ts/size: ", datum[i].ts, "/", datum[i].bytes, "end ts/size: ", datumE[i].tse, "/", datumE[i].bytes, "chunk time: ", datumE[i].tse - datum[i].ts, "arrsize: ", chunkThroughputs.length);
                         let chunkDownloadTime = datumE[i].tse - datum[i].ts;
                         if (chunkDownloadTime > 1) {
                             chunkThroughputs.push((8 * datumE[i].bytes) / chunkDownloadTime);
-                            console.log("push bw ", (8 * datumE[i].bytes) / chunkDownloadTime, "arrsize: ", chunkThroughputs.length);
+                            shortDurationStartTime = 0;
                         } else {
                             if (shortDurationStartTime === 0) {
                                 shortDurationStartTime = datum[i].ts;
+                                shortDurationBytesReceived = 0;
                             }
                             let cumulatedChunkDownloadTime = datumE[i].tse - shortDurationStartTime;
                             if (cumulatedChunkDownloadTime > 1) {
+                                shortDurationBytesReceived += datumE[i].bytes;
                                 chunkThroughputs.push((8 * shortDurationBytesReceived) / cumulatedChunkDownloadTime);
-                                console.log("push bw ", (8 * shortDurationBytesReceived) / cumulatedChunkDownloadTime, "arrsize: ", chunkThroughputs.length);
-                                shortDurationBytesReceived = 0;
                                 shortDurationStartTime = 0;
                             } else {
                                 // continue cumulating short duration data
@@ -665,11 +663,20 @@ function FetchLoader(cfg) {
 
                 if (chunkThroughputs.length > 0) {
                     const sumOfChunkThroughputs = chunkThroughputs.reduce((a, b) => a + b, 0);
-                    let moof_bw = sumOfChunkThroughputs / chunkThroughputs.length;
-                    // console.log("moof bw",moof_bw,bytesReceived/(moof_bw+1e-9))
-                    return 8 * bytesReceived / (moof_bw + 1e-9);
+                    return sumOfChunkThroughputs / chunkThroughputs.length;
                 }
             }
+
+            return null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function _calculateDownloadedTimeByMoofParsing(startTimeData, endTimeData, bytesReceived) {
+        try {
+            let real_bw = calculateThroughputByChunkData(startTimeData, endTimeData);
+            return 8 * bytesReceived / real_bw;
 
             return null;
         } catch (e) {
