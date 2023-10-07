@@ -1225,7 +1225,7 @@ function MediaPlayer() {
         return throughputHistory ? throughputHistory.getAverageThroughput(type, isDynamic) : 0;
     }
 
-    function getThroughputHis(type) {
+    function getThroughputHis() {
         var throughputHistory = abrController.getThroughputHistory();
         return throughputHistory;
     }

@@ -106,7 +106,7 @@ App.prototype._applyParameters = function () {
                     droppedFramesRule: settings.abrAdditionalDroppedFramesRule,
                     abandonRequestsRule: settings.abrAdditionalAbandonRequestRule
                 },
-                fetchThroughputCalculationMode: settings.throughputCalculation
+                fetchThroughputCalculationMode: 'abrFetchThroughputCalculationFusion'
             }
         }
     });

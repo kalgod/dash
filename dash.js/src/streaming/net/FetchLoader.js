@@ -136,9 +136,9 @@ function FetchLoader(cfg) {
                 let markBeforeFetch = Date.now();
 
                 fetch(httpRequest.url, reqOptions).then(function (response) {
-                    let tmp_len = parseInt(response.headers.get('Content-Length'), 10);
+                    // let tmp_len = parseInt(response.headers.get('Content-Length'), 10);
                     // console.log("totalbytes %s", tmp_len);
-                    console.log("entering: ", httpRequest);
+                    console.log('entering: ', httpRequest);
                     // console.log("in fetch ",Date.now());
                     if (!httpRequest.response) {
                         httpRequest.response = {};
@@ -552,6 +552,7 @@ function FetchLoader(cfg) {
 
             if (bw_all.length == 0) {
                 console.log("back A, small chunks");
+                let i = 0;
                 for (i = flag; i < datumE.length; i++) {
                     let schunk = datum[i].id;
                     let echunk = datumE[i].id;
@@ -563,6 +564,7 @@ function FetchLoader(cfg) {
                     let fusion_time = downLoadedData[echunk - 1].ts - downLoadedData[schunk - 1].ts;
                     fusion_time = Math.max(1, fusion_time);
                     let tmp_bw = 8 * tmp_bytes / fusion_time;
+                    console.log(tmp_bytes, fusion_time, tmp_bw);
                     bw_all.push({ bw: tmp_bw, size: tmp_bytes });
                 }
             }
@@ -577,8 +579,11 @@ function FetchLoader(cfg) {
                 bw_all.push({ bw: fusion_bw, size: fusion_bytes });
             }
 
+            // console.log(bw_all);
+
             let real_bw = 0;
             let real_size = 0;
+            let i = 0;
             for (i = 0; i < bw_all.length; i++) {
                 let cur_bw = bw_all[i].bw;
                 let cur_size = bw_all[i].size;
@@ -587,6 +592,8 @@ function FetchLoader(cfg) {
                 real_size += cur_size;
                 console.log("cur bw/size", i, cur_bw, cur_size);
             }
+
+            // console.log(real_bw);
             real_bw = real_bw / (real_size + 1e-9);
             real_bw = Math.min(real_bw, 15000);
             console.log("real bw ", real_bw);
@@ -603,6 +610,7 @@ function FetchLoader(cfg) {
     function _calculateDownloadedTimeBySeg(downLoadedData, bytesReceived) {
         try {
             let real_size = 0;
+            let i = 0;
             for (i = 1; i < downLoadedData.length; i++) {
                 real_size += downLoadedData[i].bytes;
             }
@@ -611,7 +619,7 @@ function FetchLoader(cfg) {
             if (real_time == 0) {
                 return downLoadedData[downLoadedData.length - 1].ts - downLoadedData[0].startts;
             }
-            real_bw = 8 * real_size / (real_time + 1e-9);
+            let real_bw = 8 * real_size / (real_time + 1e-9);
             return bytesReceived * 8 / (real_bw + 1e-9);
         } catch (e) {
             return null;

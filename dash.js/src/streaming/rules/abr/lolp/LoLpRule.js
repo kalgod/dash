@@ -138,7 +138,7 @@ function LoLPRule(config) {
             /*
              * Select next quality
              */
-            switchRequest.quality = 1;
+            switchRequest.quality = learningController.getNextQuality(mediaInfo, throughput * 1000, latency, currentBufferLevel, playbackRate, currentQuality, dynamicWeightsSelector);
             switchRequest.reason = { throughput: throughput, latency: latency };
             switchRequest.priority = SwitchRequest.PRIORITY.STRONG;
 

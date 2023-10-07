@@ -81,6 +81,12 @@
                         // ABRStrategy: 'abrBola',
                         // ABRStrategy: 'abrL2A',
                         // ABRStrategy: 'abrThroughput',
+                        additionalAbrRules: {
+                            insufficientBufferRule: true,
+                            switchHistoryRule: true,
+                            droppedFramesRule: true,
+                            abandonRequestsRule: false
+                        },
                         // fetchThroughputCalculationMode: 'abrFetchThroughputCalculationMoofParsing',
                         // fetchThroughputCalculationMode: 'abrFetchThroughputCalculationIMoofParsing',
                         // fetchThroughputCalculationMode: 'abrFetchThroughputCalculationAAST',
