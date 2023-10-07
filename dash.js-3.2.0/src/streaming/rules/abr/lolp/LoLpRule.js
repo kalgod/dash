@@ -120,7 +120,7 @@ function LoLPRule(config) {
             let currentBitrate = bitrateList[currentQuality].bandwidth;
             let currentBitrateKbps = currentBitrate / 1000.0;
             let httpRequest = dashMetrics.getCurrentHttpRequest(mediaType, true);
-            let lastFragmentDownloadTime = (httpRequest.tresponse.getTime() - httpRequest.trequest.getTime()) / 1000;
+            let lastFragmentDownloadTime = httpRequest.interval / 1000;
             let segmentRebufferTime = lastFragmentDownloadTime > segmentDuration ? lastFragmentDownloadTime - segmentDuration : 0;
             qoeEvaluator.setupPerSegmentQoe(segmentDuration, maxBitrateKbps, minBitrateKbps);
             qoeEvaluator.logSegmentMetrics(currentBitrateKbps, segmentRebufferTime, latency, playbackRate);

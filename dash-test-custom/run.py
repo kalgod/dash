@@ -17,7 +17,7 @@ def run_mm(i,j,k):
     TRACE = './trace/cooked/'+i+"/"+j
 
     comm="node run.js "+i+" "+j+" "+k
-    start_server = 'mm-link '+TRACE+" "+TRACE+" "+comm
+    start_server = 'mm-delay 20 mm-link '+TRACE+" "+TRACE+" "+comm
     cur_time=time.time()
     print(start_server,"\n",cur_time)
     proc = subprocess.Popen(start_server, shell=True)

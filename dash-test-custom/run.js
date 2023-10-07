@@ -208,7 +208,7 @@ sleep(waitSeconds * 1000).then(() => {
     // exec(tmp_comm);
     console.log("now1", Date.now());
 
-    let targethtml = "file:///home/cjh/dash/dash.js-3.2.0/samples/low-latency/" + alg + ".html"
+    let targethtml = "file:///home/cjh/work/dash/dash.js/samples/low-latency/" + alg + ".html"
     await page.goto(targethtml);
 
     console.log("now2", Date.now(), targethtml);
@@ -217,6 +217,35 @@ sleep(waitSeconds * 1000).then(() => {
     // readTrace(cdpClient, traceData, './bw_truth/' + dirs + '/' + trace + "/" + alg);
 
     console.log("Waiting for player to setup.");
+    // const hasLoaded = player.getBitrateInfoListFor("video");
+    // console.log(hasLoaded, hasLoaded.length == 0);
+    // page.on('console', message => {
+    //   const type = message.type().toUpperCase();
+    //   const text = message.text();
+
+    //   if (type === 'LOG') {
+    //     console.log(text);
+    //   } else if (type === 'ERROR') {
+    //     console.error(text);
+    //   } else if (type === 'WARNING') {
+    //     console.warn(text);
+    //   } else if (type === 'INFO') {
+    //     console.info(text);
+    //   } else if (type === 'DEBUG') {
+    //     console.debug(text);
+    //   } else {
+    //     console.log(`[${type}] ${text}`);
+    //   }
+
+    //   const args = message.args();
+    //   args.forEach(arg => {
+    //     arg.jsonValue().then(value => {
+    //       console.dir(value);
+    //     }).catch(err => {
+    //       console.log(err);
+    //     });
+    //   });
+    // });
     await page.evaluate(() => {
       return new Promise(resolve => {
         const hasLoaded = player.getBitrateInfoListFor("video").length !== 0;

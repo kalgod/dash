@@ -261,6 +261,5 @@ for trace in traces:
         flu.append(f1)
         qoe.append(qoe1)
         print(trace,bw,"{:.2f}\t,{:.2f}\t,{:.2f}\t,{:.2f}\t,{:.2f}\t,{:.2f}\t,{:.2f}".format(len1,b1,r1,l1,p1,f1,qoe1))
-    print("done for",trace)
-    if (len(b)!=0): print("b,r,l,p,f,qoe: {:.4f}\t,{:.4f}\t,{:.4f}\t,{:.4f}\t,{:.4f}\t,{:.4f} ".format(np.mean(b),np.mean(r),np.mean(l),np.mean(p),np.mean(flu),np.mean(qoe)))
+    print("done for",trace,"b,r,l,p,f,qoe: {:.4f}\t,{:.4f}\t,{:.4f}\t,{:.4f}\t,{:.4f}\t,{:.4f} \n".format(np.mean(b),np.mean(r),np.mean(l),np.mean(p),np.mean(flu),np.mean(qoe)))
 print("all done")
