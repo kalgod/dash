@@ -140,6 +140,7 @@ function ScheduleController(config) {
                     // in case the playback quality is supposed to be changed, the corresponding StreamProcessor will update the currentRepresentation.
                     // The StreamProcessor will also start the schedule timer again once the quality switch has beeen prepared. Consequently, we only call _getNextFragment if the quality is not changed.
                     qualityChange = abrController.checkPlaybackQuality(type, streamInfo.id);
+                    checkPlaybackQuality = false;
                 }
                 if (!qualityChange) {
                     _getNextFragment();
