@@ -220,31 +220,14 @@ sleep(waitSeconds * 1000).then(() => {
     // const hasLoaded = player.getBitrateInfoListFor("video");
     // console.log(hasLoaded, hasLoaded.length == 0);
     // page.on('console', message => {
-    //   const type = message.type().toUpperCase();
-    //   const text = message.text();
-
-    //   if (type === 'LOG') {
-    //     console.log(text);
-    //   } else if (type === 'ERROR') {
-    //     console.error(text);
-    //   } else if (type === 'WARNING') {
-    //     console.warn(text);
-    //   } else if (type === 'INFO') {
-    //     console.info(text);
-    //   } else if (type === 'DEBUG') {
-    //     console.debug(text);
-    //   } else {
-    //     console.log(`[${type}] ${text}`);
-    //   }
-
-    //   const args = message.args();
-    //   args.forEach(arg => {
-    //     arg.jsonValue().then(value => {
+    //   if (message.text().includes('JSHandle@object')) {
+    //     message.args().forEach(async arg => {
+    //       const value = await arg.jsonValue();
     //       console.dir(value);
-    //     }).catch(err => {
-    //       console.log(err);
     //     });
-    //   });
+    //   } else {
+    //     console.log(`[${message.type().toUpperCase()}] ${message.text()}`);
+    //   }
     // });
     await page.evaluate(() => {
       return new Promise(resolve => {

@@ -34,7 +34,7 @@
 import MetricsConstants from '../../constants/MetricsConstants';
 import SwitchRequest from '../SwitchRequest';
 import FactoryMaker from '../../../core/FactoryMaker';
-import {HTTPRequest} from '../../vo/metrics/HTTPRequest';
+import { HTTPRequest } from '../../vo/metrics/HTTPRequest';
 import EventBus from '../../../core/EventBus';
 import Events from '../../../core/events/Events';
 import Debug from '../../../core/Debug';
@@ -324,6 +324,8 @@ function L2ARule(config) {
         const videoModel = rulesContext.getVideoModel();
         let quality;
         let currentPlaybackRate = videoModel.getPlaybackRate();
+
+        console.log("in l2all", throughput, latency)
 
         if (!rulesContext || !rulesContext.hasOwnProperty('getMediaInfo') || !rulesContext.hasOwnProperty('getMediaType') ||
             !rulesContext.hasOwnProperty('getScheduleController') || !rulesContext.hasOwnProperty('getStreamInfo') ||

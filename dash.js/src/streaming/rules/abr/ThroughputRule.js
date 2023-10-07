@@ -73,6 +73,7 @@ function ThroughputRule(config) {
         const latency = throughputHistory.getAverageLatency(mediaType);
         const useBufferOccupancyABR = rulesContext.useBufferOccupancyABR();
 
+        // console.log("in thr,", throughput);
         if (isNaN(throughput) || !currentBufferState || useBufferOccupancyABR) {
             return switchRequest;
         }
@@ -81,7 +82,7 @@ function ThroughputRule(config) {
             if (currentBufferState.state === MetricsConstants.BUFFER_LOADED || isDynamic) {
                 switchRequest.quality = abrController.getQualityForBitrate(mediaInfo, throughput, streamId, latency);
                 scheduleController.setTimeToLoadDelay(0);
-                switchRequest.reason = {throughput: throughput, latency: latency};
+                switchRequest.reason = { throughput: throughput, latency: latency };
             }
         }
 

@@ -1,2 +1,2 @@
-TRACE=['norway']
-total_trace=10
+TRACE=['fcc','oboe','norway','all_0']
+total_trace=30

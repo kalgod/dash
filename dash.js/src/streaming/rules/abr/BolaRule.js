@@ -34,7 +34,7 @@
 import MetricsConstants from '../../constants/MetricsConstants';
 import SwitchRequest from '../SwitchRequest';
 import FactoryMaker from '../../../core/FactoryMaker';
-import {HTTPRequest} from '../../vo/metrics/HTTPRequest';
+import { HTTPRequest } from '../../vo/metrics/HTTPRequest';
 import EventBus from '../../../core/EventBus';
 import Events from '../../../core/events/Events';
 import Debug from '../../../core/Debug';
@@ -384,6 +384,7 @@ function BolaRule(config) {
     }
 
     function getMaxIndex(rulesContext) {
+        // console.log("in bola");
         const switchRequest = SwitchRequest(context).create();
 
         if (!rulesContext || !rulesContext.hasOwnProperty('getMediaInfo') || !rulesContext.hasOwnProperty('getMediaType') ||

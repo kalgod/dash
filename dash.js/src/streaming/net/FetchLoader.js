@@ -535,14 +535,14 @@ function FetchLoader(cfg) {
             if (flag != 0) {
                 let lastchunk = datumE[flag - 1].id;
                 console.log("lastchunk", lastchunk);
-                if (lastchunk > 1) {
+                if (lastchunk > 2) {
                     let i = 0;
                     let fusion_bytes = 0;
-                    for (i = 1; i < lastchunk; i++) {
+                    for (i = 1; i < lastchunk - 1; i++) {
                         fusion_bytes += downLoadedData[i].bytes;
                         // console.log("fusion ",fusion_bytes);
                     }
-                    let fusion_time = downLoadedData[lastchunk - 1].ts - downLoadedData[0].ts;
+                    let fusion_time = downLoadedData[lastchunk - 2].ts - downLoadedData[0].ts;
                     fusion_time = Math.max(1, fusion_time);
                     let fusion_bw = 8 * fusion_bytes / fusion_time;
                     bw_all.push({ bw: fusion_bw, size: fusion_bytes });

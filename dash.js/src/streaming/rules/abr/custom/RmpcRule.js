@@ -69,14 +69,24 @@ function RmpcRuleClass(config) {
 
     function getMaxIndex(rulesContext) {
         try {
-            let switchRequest = SwitchRequest(context).create();
-            let mediaType = rulesContext.getMediaInfo().type;
+            let metricsModel = MetricsModel(context).getInstance();
+            var mediaType = rulesContext.getMediaInfo().type;
+            var metrics = metricsModel.getMetricsFor(mediaType, true);
 
+            // A smarter (real) rule could need analyze playback metrics to take
+            // bitrate switching decision. Printing metrics here as a reference
+            // console.log(metrics);
+
+            // Get current bitrate
+            let streamController = StreamController(context).getInstance();
+            let abrController = rulesContext.getAbrController();
+            // let current = abrController.getQualityFor(mediaType, streamController.getActiveStreamInfo().id);
+
+            let switchRequest = SwitchRequest(context).create();
             const scheduleController = rulesContext.getScheduleController();
             const playbackController = scheduleController.getPlaybackController();
             let latency = playbackController.getCurrentLiveLatency();
-            let abrController = rulesContext.getAbrController();
-            const streamInfo = rulesContext.getStreamInfo();
+            const streamInfo = streamController.getActiveStreamInfo().id;
             let currentQuality = abrController.getQualityFor(mediaType, streamInfo);
             const mediaInfo = rulesContext.getMediaInfo();
 
@@ -127,7 +137,7 @@ function RmpcRuleClass(config) {
              * Select next quality
              */
 
-            console.log("sum: ", flag, interval, currentBitrate, currentBufferLevel, throughput, latency, playbackRate, next_bit);
+            console.log("in rmpc, sum: ", flag, httpRequest._quality, currentQuality, interval, currentBitrate, currentBufferLevel, throughput, latency, playbackRate);
             let next_q = decision(currentBitrate, currentBufferLevel, throughput, latency, playbackRate, next_bit, flag);
             switchRequest.quality = next_q;
             // switchRequest.quality = abrController.getQualityForBitrate(mediaInfo, throughput, latency);

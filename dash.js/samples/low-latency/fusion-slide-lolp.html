@@ -450,7 +450,7 @@
                     const streamInfo = player.getActiveStream().getStreamInfo()
                     const isDynamic = streamInfo && streamInfo.manifestInfo ? streamInfo.manifestInfo.isDynamic : null;
                     const throughput = Math.round(player.getAverageThroughput('video', isDynamic));
-                    console.log(player);
+                    // console.log(player);
                     const throughputhis = player.getThroughputHis().getDict()[e.mediaType]
 
                     // console.log("player is",player,segmentKey,throughputhis,new Date(e.request.firstByteDate).getTime() / 1000)
