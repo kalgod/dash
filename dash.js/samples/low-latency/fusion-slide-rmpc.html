@@ -76,11 +76,17 @@
                     abr: {
                         useDefaultABRRules: false,
                         // useDefaultABRRules: true,
-                        // ABRStrategy: 'abrLoLP',
+                        ABRStrategy: 'abrLoLP',
                         // ABRStrategy: 'abrDynamic',
                         // ABRStrategy: 'abrBola',
                         // ABRStrategy: 'abrL2A',
                         // ABRStrategy: 'abrThroughput',
+                        additionalAbrRules: {
+                            insufficientBufferRule: true,
+                            switchHistoryRule: true,
+                            droppedFramesRule: true,
+                            abandonRequestsRule: false
+                        },
                         // fetchThroughputCalculationMode: 'abrFetchThroughputCalculationMoofParsing',
                         // fetchThroughputCalculationMode: 'abrFetchThroughputCalculationIMoofParsing',
                         // fetchThroughputCalculationMode: 'abrFetchThroughputCalculationAAST',
@@ -159,7 +165,7 @@
                             <!-- <p>Target Latency (secs): <input type="number" id="target-latency" value="2" min="0" step="0.1"></p> -->
                             <!-- <p>Target Latency (secs): <input type="number" id="target-latency" value="3" min="0" step="0.1"></p> -->
 
-                            <p>Max. drift (secs): <input type="number" id="max-drift" value="0.05" min="0.0" max="0.5"
+                            <p>Max. drift (secs): <input type="number" id="max-drift" value="0.0" min="0.0" max="0.5"
                                     step="0.01"></p>
 
                             <!-- Set Catch-up playback rate -->

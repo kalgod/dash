@@ -1,2 +1,2 @@
 TRACE=['norway']
-total_trace=40
+total_trace=10

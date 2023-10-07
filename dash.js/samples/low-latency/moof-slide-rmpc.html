@@ -18,7 +18,7 @@
     <script src="../../src/streaming/rules/abr/custom/RmpcRule.js" class="code"></script>
 
     <script class="code">
-        var player, targetLatency, minDrift, catchupPlaybackRate;
+        var player, targetLatency, maxDrift, catchupPlaybackRate;
         var useCustomPlaybackControl, playbackBufferMin, playbackBufferMax;
         var ruleUsed = 'Low On Latency Plus (LoL+fusion)';
         let qoeEvaluatorUi = new QoeEvaluator();
@@ -31,23 +31,64 @@
 
             video = document.querySelector('video');
             player = dashjs.MediaPlayer().create();
+            applyParameters();
             player.initialize(video, url, true);
+            document.querySelector('#rule-used-tag').innerText = ruleUsed;
+
+            return player;
+        }
+
+        function applyParameters() {
+            targetLatency = parseFloat(document.getElementById('target-latency').value, 10);
+            maxDrift = parseFloat(document.getElementById('max-drift').value, 10);
+            catchupPlaybackRate = parseFloat(document.getElementById('catchup-playback-rate').value, 10);
+
+            /* TGC addition for custom playback control */
+            var useCustomPlaybackControl = document.getElementById('use-custom-playback-control').checked;
+            var playbackBufferMin = parseFloat(document.getElementById('playback-buffer-min').value, 10);
+
+            player.addABRCustomRule('qualitySwitchRules', 'RmpcRule', RmpcRule);
+
+            console.log(targetLatency, maxDrift, catchupPlaybackRate, useCustomPlaybackControl, playbackBufferMin);
+
             player.updateSettings({
                 debug: {
                     logLevel: dashjs.Debug.LOG_LEVEL_WARNING
                 },
                 streaming: {
-                    stallThreshold: 0.05,
-                    lowLatencyEnabled: true,
+                    delay: {
+                        liveDelay: targetLatency
+                    },
+                    liveCatchup: {
+                        enabled: true,
+                        maxDrift: maxDrift,
+                        playbackRate: {
+                            min: -catchupPlaybackRate,
+                            max: catchupPlaybackRate
+                        },
+                        playbackBufferMin: playbackBufferMin,
+                        mode: 'liveCatchupModeLoLP'
+                        // mode: 'liveCatchupModeDefault'
+                    },
+                    buffer: {
+                        stallThreshold: 0.05,
+                    },
                     abr: {
-                        useDefaultABRRules: true,
+                        useDefaultABRRules: false,
+                        // useDefaultABRRules: true,
                         ABRStrategy: 'abrLoLP',
                         // ABRStrategy: 'abrDynamic',
                         // ABRStrategy: 'abrBola',
                         // ABRStrategy: 'abrL2A',
                         // ABRStrategy: 'abrThroughput',
-                        fetchThroughputCalculationMode: 'abrFetchThroughputCalculationMoofParsing',
-                        // fetchThroughputCalculationMode: 'abrFetchThroughputCalculationIMoofParsing',
+                        additionalAbrRules: {
+                            insufficientBufferRule: true,
+                            switchHistoryRule: true,
+                            droppedFramesRule: true,
+                            abandonRequestsRule: false
+                        },
+                        // fetchThroughputCalculationMode: 'abrFetchThroughputCalculationMoofParsing',
+                        fetchThroughputCalculationMode: 'abrFetchThroughputCalculationIMoofParsing',
                         // fetchThroughputCalculationMode: 'abrFetchThroughputCalculationAAST',
                         // fetchThroughputCalculationMode: 'abrFetchThroughputCalculationDownloadedData',
                         // fetchThroughputCalculationMode: 'abrFetchThroughputCalculationFusion',
@@ -57,63 +98,6 @@
                     }
                 }
             });
-
-            player.updateSettings({
-                streaming: {
-                    abr: {
-                        useDefaultABRRules: false,
-                    }
-                }
-            });
-            player.addABRCustomRule('qualitySwitchRules', 'RmpcRule', RmpcRule);
-
-            document.querySelector('#rule-used-tag').innerText = ruleUsed;
-
-            applyParameters();
-
-            return player;
-        }
-
-        function applyParameters() {
-            targetLatency = parseFloat(document.getElementById('target-latency').value, 10);
-            minDrift = parseFloat(document.getElementById('min-drift').value, 10);
-            catchupPlaybackRate = parseFloat(document.getElementById('catchup-playback-rate').value, 10);
-
-            player.updateSettings({
-                streaming: {
-                    delay: {
-                        liveDelay: targetLatency
-                    },
-                    liveCatchup: {
-                        minDrift: minDrift,
-                        playbackRate: catchupPlaybackRate
-                    }
-                }
-            });
-
-            /* TGC addition for custom playback control */
-            var useCustomPlaybackControl = document.getElementById('use-custom-playback-control').checked;
-            if (useCustomPlaybackControl) {
-                var playbackBufferMin = parseFloat(document.getElementById('playback-buffer-min').value, 10);
-
-                player.updateSettings({
-                    streaming: {
-                        liveCatchup: {
-                            playbackBufferMin: playbackBufferMin,
-                            mode: 'liveCatchupModeLoLP'
-                            // mode: 'liveCatchupModeDefault'
-                        }
-                    }
-                });
-            } else {
-                player.updateSettings({
-                    streaming: {
-                        liveCatchup: {
-                            mode: 'liveCatchupModeDefault'
-                        }
-                    }
-                });
-            }
         }
     </script>
 
@@ -181,7 +165,7 @@
                             <!-- <p>Target Latency (secs): <input type="number" id="target-latency" value="2" min="0" step="0.1"></p> -->
                             <!-- <p>Target Latency (secs): <input type="number" id="target-latency" value="3" min="0" step="0.1"></p> -->
 
-                            <p>Min. drift (secs): <input type="number" id="min-drift" value="0.05" min="0.0" max="0.5"
+                            <p>Max. drift (secs): <input type="number" id="max-drift" value="0.0" min="0.0" max="0.5"
                                     step="0.01"></p>
 
                             <!-- Set Catch-up playback rate -->
@@ -218,7 +202,7 @@
                     <legend>Current values</legend>
                     <ul>
                         <li>Latency: <span id="latency-tag"></span></li>
-                        <li>Min. drift: <span id="mindrift-tag"></span></li>
+                        <li>Max. drift: <span id="maxdrift-tag"></span></li>
                         <li>Playback rate: <span id="playbackrate-tag"></span></li>
                         <li>Buffer: <b><span id="buffer-tag"></span></b></li>
                         <li>Quality: <b><span id="quality-tag"></span></b></li>
@@ -242,10 +226,10 @@
                 <!-- <p><a href="http://cdn.dashjs.org/latest/jsdoc/module-MediaPlayer.html#setLiveDelay__anchor" target="_blank">setLiveDelay() doc</a></p> -->
             </div>
 
-            <div id="min-drift-help">
-                <h3>Min. drift</h3>
-                <p>Minimum latency deviation allowed before activating catch-up mechanism.</p>
-                <!-- <p><a href="http://cdn.dashjs.org/latest/jsdoc/module-MediaPlayer.html#setLowLatencyMinDrift__anchor" target="_blank">setLowLatencyMinDrift() doc</a></p> -->
+            <div id="max-drift-help">
+                <h3>Max. drift</h3>
+                <p>Maximum latency deviation allowed before activating catch-up mechanism.</p>
+                <!-- <p><a href="http://cdn.dashjs.org/latest/jsdoc/module-MediaPlayer.html#setLowLatencyMaxDrift__anchor" target="_blank">setLowLatencyMaxDrift() doc</a></p> -->
             </div>
 
             <div id="catch-up-playback-rate-help">
@@ -291,7 +275,7 @@
                 var availibleBW = Math.round(player.getAverageThroughput("video"));
                 document.getElementById("bw-tag").innerHTML = availibleBW + " Kbps";
 
-                document.getElementById("mindrift-tag").innerHTML = settings.streaming.liveCatchup.minDrift + " secs";
+                document.getElementById("maxdrift-tag").innerHTML = settings.streaming.liveCatchup.maxDrift + " secs";
 
                 var currentPlaybackRate = player.getPlaybackRate();
                 document.getElementById("playbackrate-tag").innerHTML = Math.round(currentPlaybackRate * 100) / 100;
@@ -467,7 +451,7 @@
                     const isDynamic = streamInfo && streamInfo.manifestInfo ? streamInfo.manifestInfo.isDynamic : null;
                     const throughput = Math.round(player.getAverageThroughput('video', isDynamic));
                     console.log(player);
-                    const throughputhis = player.getThroughputHis().getDict()[e.mediaType];
+                    const throughputhis = player.getThroughputHis().getDict()[e.mediaType]
 
                     // console.log("player is",player,segmentKey,throughputhis,new Date(e.request.firstByteDate).getTime() / 1000)
 
