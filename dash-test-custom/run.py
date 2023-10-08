@@ -6,6 +6,7 @@ import signal
 import subprocess
 import time
 from const import *
+import execjs
 
 mode=int(sys.argv[1])
 alg=str(sys.argv[2])
@@ -18,9 +19,12 @@ def run_mm(i,j,k):
 
     comm="node run.js "+i+" "+j+" "+k
     start_server = 'mm-delay 20 mm-link '+TRACE+" "+TRACE+" "+comm
-    cur_time=time.time()
-    print(start_server,"\n",cur_time)
+    
     proc = subprocess.Popen(start_server, shell=True)
+    js_time=execjs.eval("Date.now()")
+    cur_time=time.time()
+    print(start_server,"\n",cur_time,js_time)
+    cur_time=float(js_time)/1000.0
     (out, err) = proc.communicate()
     print("subprocess message" + str(out)+str(err))
 
@@ -63,7 +67,7 @@ if (mode==0):
     bw=range(total_trace)
     for i in trace:
         for j in bw:
-            run_mm(i,str(j),alg)
+            run_chrome(i,str(j),alg)
 else:
     print("in mode 1")
     traces=os.listdir(pre_path)

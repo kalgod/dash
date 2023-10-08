@@ -138,6 +138,7 @@ function LoLPRule(config) {
             /*
              * Select next quality
              */
+            console.log('in lolp')
             switchRequest.quality = learningController.getNextQuality(mediaInfo, throughput * 1000, latency, currentBufferLevel, playbackRate, currentQuality, dynamicWeightsSelector);
             // let bw_cur = throughputHistory.getDict()[mediaType]
             // let bw_tmp = Math.min(throughput / 0.9, bw_cur[bw_cur.length - 1])

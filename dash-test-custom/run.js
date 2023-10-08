@@ -214,7 +214,7 @@ sleep(waitSeconds * 1000).then(() => {
     console.log("now2", Date.now(), targethtml);
     const cdpClient = await page.target().createCDPSession();
 
-    // readTrace(cdpClient, traceData, './bw_truth/' + dirs + '/' + trace + "/" + alg);
+    readTrace(cdpClient, traceData, './bw_truth/' + dirs + '/' + trace + "/" + alg);
 
     console.log("Waiting for player to setup.");
     // const hasLoaded = player.getBitrateInfoListFor("video");

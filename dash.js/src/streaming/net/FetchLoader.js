@@ -237,9 +237,9 @@ function FetchLoader(cfg) {
                         httpRequest.reader = response.body.getReader();
                     }
 
-                    let StartTimeData = [];
-                    let EndTimeData = [];
-                    let downLoadedData = [];
+                    let downloadedData = [];
+                    let startTimeData = [];
+                    let endTimeData = [];
                     let lastChunkWasFinished = true;
 
                     let Count = 0;
@@ -255,9 +255,9 @@ function FetchLoader(cfg) {
                                         loaded: bytesReceived,
                                         total: isNaN(totalBytes) ? bytesReceived : totalBytes,
                                         lengthComputable: true,
-                                        time: calculateDownloadedTime(calculationMode, StartTimeData, EndTimeData, downLoadedData, bytesReceived, flag),
-                                        startts: downLoadedData[0].ts,
-                                        endts: downLoadedData[downLoadedData.length - 1].ts,
+                                        time: calculateDownloadedTime(calculationMode, startTimeData, endTimeData, downloadedData, bytesReceived, flag),
+                                        startts: downloadedData[0].ts,
+                                        endts: downloadedData[downloadedData.length - 1].ts,
                                         stream: true
                                     });
                                 }
@@ -271,7 +271,7 @@ function FetchLoader(cfg) {
 
                         function pushflag1(curts, cursize, Count) {
                             // console.log("push flag1")
-                            StartTimeData.push({
+                            startTimeData.push({
                                 ts: curts, /* jshint ignore:line */
                                 bytes: cursize,
                                 id: Count
@@ -283,8 +283,8 @@ function FetchLoader(cfg) {
                             const end = Flag2.lastCompletedOffset + Flag2.size;
                             // console.log("push flag2 end ", end);
                             // Store the end time of each chunk download  with its size in array EndTimeData
-                            EndTimeData.push({
-                                tse: curts, /* jshint ignore:line */
+                            endTimeData.push({
+                                ts: curts, /* jshint ignore:line */
                                 bytes: end,
                                 id: curcount
                             });
@@ -314,14 +314,14 @@ function FetchLoader(cfg) {
                             bytesReceived += value.length;
                             let startts = initTime;
                             if (Count != 1) startts = curTime
-                            downLoadedData.push({
+                            downloadedData.push({
                                 startts: startts,
                                 ts: curTime,
                                 bytes: value.length
                             });
                             // console.log("new value ", value.length, "remain ", remaining.length, "offset ", offset, "ts ", curTime);
                             // console.log("begin len ", StartTimeData.length, "end len ", EndTimeData.length);
-                            if (StartTimeData.length - EndTimeData.length > 1 || StartTimeData.length - EndTimeData.length < -1) {
+                            if (startTimeData.length - endTimeData.length > 1 || startTimeData.length - endTimeData.length < -1) {
                                 console.log("StartTime length wrong !!\n!!!\n");
                             }
 
@@ -332,7 +332,7 @@ function FetchLoader(cfg) {
                                     if (boxesInfo.found) {
                                         // Store the beginning time of each chunk download in array StartTimeData
                                         lastChunkWasFinished = false;
-                                        StartTimeData.push({
+                                        startTimeData.push({
                                             ts: performance.now(), /* jshint ignore:line */
                                             bytes: value.length,
                                             id: Count
@@ -347,8 +347,8 @@ function FetchLoader(cfg) {
                                     // Store the end time of each chunk download  with its size in array EndTimeData
                                     if (calculationMode === Constants.ABR_FETCH_THROUGHPUT_CALCULATION_MOOF_PARSING && !lastChunkWasFinished) {
                                         lastChunkWasFinished = true;
-                                        EndTimeData.push({
-                                            tse: performance.now(), /* jshint ignore:line */
+                                        endTimeData.push({
+                                            ts: performance.now(), /* jshint ignore:line */
                                             bytes: remaining.length,
                                             id: Count
                                         });
@@ -491,58 +491,58 @@ function FetchLoader(cfg) {
     }
 
     // Compute the download time of a segment
-    function calculateDownloadedTime(calculationMode, startTimeData, endTimeData, downLoadedData, bytesReceived, flag) {
-        showInfo(startTimeData, endTimeData, downLoadedData);
+    function calculateDownloadedTime(calculationMode, startTimeData, endTimeData, downloadedData, bytesReceived, flag) {
+        showInfo(startTimeData, endTimeData, downloadedData);
         switch (calculationMode) {
             case Constants.ABR_FETCH_THROUGHPUT_CALCULATION_MOOF_PARSING:
                 return _calculateDownloadedTimeByMoofParsing(startTimeData, endTimeData, bytesReceived);
             case Constants.ABR_FETCH_THROUGHPUT_CALCULATION_IMOOF_PARSING:
                 return _calculateDownloadedTimeByMoofParsing(startTimeData, endTimeData, bytesReceived);
             case Constants.ABR_FETCH_THROUGHPUT_CALCULATION_DOWNLOADED_DATA:
-                return _calculateDownloadedTimeByBytesReceived(downLoadedData, bytesReceived);
+                return _calculateDownloadedTimeByBytesReceived(downloadedData, bytesReceived);
             case Constants.ABR_FETCH_THROUGHPUT_CALCULATION_FUSION:
-                return _calculateDownloadedTimeByFusion(startTimeData, endTimeData, downLoadedData, bytesReceived, flag);
+                return _calculateDownloadedTimeByFusion(startTimeData, endTimeData, downloadedData, bytesReceived, flag);
             case Constants.ABR_FETCH_THROUGHPUT_CALCULATION_SEG:
-                return _calculateDownloadedTimeBySeg(downLoadedData, bytesReceived);
+                return _calculateDownloadedTimeBySeg(downloadedData, bytesReceived);
             default:
-                return _calculateDownloadedTimeByBytesReceived(downLoadedData, bytesReceived);
+                return _calculateDownloadedTimeByBytesReceived(downloadedData, bytesReceived);
         }
     }
 
-    function showInfo(startTimeData, endTimeData, downLoadedData) {
+    function showInfo(startTimeData, endTimeData, downloadedData) {
         let i = 0;
         let datum = startTimeData;
         let datumE = endTimeData;
-        for (i = 0; i < downLoadedData.length; i++) {
-            let data = downLoadedData[i];
-            console.log("index: ", i, "startts: ", data.startts, "ts: ", data.ts, "bytes: ", data.bytes, "total time: ", downLoadedData[downLoadedData.length - 1].ts - downLoadedData[0].ts);
+        for (i = 0; i < downloadedData.length; i++) {
+            let data = downloadedData[i];
+            console.log("index: ", i, "startts: ", data.startts, "ts: ", data.ts, "bytes: ", data.bytes, "total time: ", downloadedData[downloadedData.length - 1].ts - downloadedData[0].ts);
         }
         for (let i = 0; i < datum.length; i++) {
             if (datum[i] && datumE[i]) {
-                console.log("index: ", i, "start ts/size: ", datum[i].ts, "/", datum[i].bytes, "id ", datum[i].id, "end ts/size: ", datumE[i].tse, "/", datumE[i].bytes, "id ", datumE[i].id, "chunk time: ", datumE[i].tse - datum[i].ts);
+                console.log("index: ", i, "start ts/size: ", datum[i].ts, "/", datum[i].bytes, "id ", datum[i].id, "end ts/size: ", datumE[i].ts, "/", datumE[i].bytes, "id ", datumE[i].id, "chunk time: ", datumE[i].ts - datum[i].ts);
             }
         }
         return;
     }
 
-    function _calculateDownloadedTimeByFusion(startTimeData, endTimeData, downLoadedData, bytesReceived, flag) {
+    function _calculateDownloadedTimeByFusion(startTimeData, endTimeData, downloadedData, bytesReceived, flag) {
         try {
             let bw_all = [];
             let datum = startTimeData;
             let datumE = endTimeData;
             console.log("flag ", flag)
             // if (flag==0) return _calculateDownloadedTimeByMoofParsing(startTimeData, endTimeData, bytesReceived);
-            if (flag != 0) {
+            if (flag > 15) {
                 let lastchunk = datumE[flag - 1].id;
-                console.log("lastchunk", lastchunk);
+                // console.log("lastchunk", lastchunk);
                 if (lastchunk > 2) {
                     let i = 0;
                     let fusion_bytes = 0;
                     for (i = 1; i < lastchunk - 1; i++) {
-                        fusion_bytes += downLoadedData[i].bytes;
+                        fusion_bytes += downloadedData[i].bytes;
                         // console.log("fusion ",fusion_bytes);
                     }
-                    let fusion_time = downLoadedData[lastchunk - 2].ts - downLoadedData[0].ts;
+                    let fusion_time = downloadedData[lastchunk - 2].ts - downloadedData[0].ts;
                     fusion_time = Math.max(1, fusion_time);
                     let fusion_bw = 8 * fusion_bytes / fusion_time;
                     bw_all.push({ bw: fusion_bw, size: fusion_bytes });
@@ -553,18 +553,18 @@ function FetchLoader(cfg) {
             if (bw_all.length == 0) {
                 console.log("back A, small chunks");
                 let i = 0;
-                for (i = flag; i < datumE.length; i++) {
+                for (i = 0; i < 1; i++) {
                     let schunk = datum[i].id;
                     let echunk = datumE[i].id;
                     let j = 0;
-                    if (schunk == echunk) continue
+                    if (schunk + 1 >= echunk) continue
                     let tmp_bytes = 0;
                     // console.log("schunk/echunk", i, schunk, echunk);
-                    for (j = schunk; j < echunk; j++) tmp_bytes += downLoadedData[j].bytes;
-                    let fusion_time = downLoadedData[echunk - 1].ts - downLoadedData[schunk - 1].ts;
+                    for (j = schunk; j < echunk - 1; j++) tmp_bytes += downloadedData[j].bytes;
+                    let fusion_time = downloadedData[echunk - 2].ts - downloadedData[schunk - 1].ts;
                     fusion_time = Math.max(1, fusion_time);
                     let tmp_bw = 8 * tmp_bytes / fusion_time;
-                    console.log(tmp_bytes, fusion_time, tmp_bw);
+                    // console.log(tmp_bytes, fusion_time, tmp_bw);
                     bw_all.push({ bw: tmp_bw, size: tmp_bytes });
                 }
             }
@@ -572,8 +572,8 @@ function FetchLoader(cfg) {
 
             if (bw_all.length == 0) {
                 console.log("back B, first http chunk");
-                let fusion_bytes = downLoadedData[0].bytes;
-                let fusion_time = downLoadedData[0].ts - downLoadedData[0].startts;
+                let fusion_bytes = downloadedData[0].bytes;
+                let fusion_time = downloadedData[0].ts - downloadedData[0].startts;
                 fusion_time = Math.max(1, fusion_time);
                 let fusion_bw = 8 * fusion_bytes / fusion_time;
                 bw_all.push({ bw: fusion_bw, size: fusion_bytes });
@@ -607,17 +607,17 @@ function FetchLoader(cfg) {
         }
     }
 
-    function _calculateDownloadedTimeBySeg(downLoadedData, bytesReceived) {
+    function _calculateDownloadedTimeBySeg(downloadedData, bytesReceived) {
         try {
             let real_size = 0;
             let i = 0;
-            for (i = 1; i < downLoadedData.length; i++) {
-                real_size += downLoadedData[i].bytes;
+            for (i = 1; i < downloadedData.length; i++) {
+                real_size += downloadedData[i].bytes;
             }
-            let real_time = downLoadedData[downLoadedData.length - 1].ts - downLoadedData[0].ts;
+            let real_time = downloadedData[downloadedData.length - 1].ts - downloadedData[0].ts;
             // real_time=Math.max(1,real_time)
             if (real_time == 0) {
-                return downLoadedData[downLoadedData.length - 1].ts - downLoadedData[0].startts;
+                return downloadedData[downloadedData.length - 1].ts - downloadedData[0].startts;
             }
             let real_bw = 8 * real_size / (real_time + 1e-9);
             return bytesReceived * 8 / (real_bw + 1e-9);
@@ -639,19 +639,21 @@ function FetchLoader(cfg) {
                 let shortDurationStartTime = 0;
                 for (let i = 0; i < datum.length; i++) {
                     if (datum[i] && datumE[i]) {
-                        let chunkDownloadTime = datumE[i].tse - datum[i].ts;
+                        let chunkDownloadTime = datumE[i].ts - datum[i].ts;
                         if (chunkDownloadTime > 1) {
                             chunkThroughputs.push((8 * datumE[i].bytes) / chunkDownloadTime);
+                            console.log("pushing", (8 * datumE[i].bytes) / chunkDownloadTime, datumE[i].bytes);
                             shortDurationStartTime = 0;
                         } else {
                             if (shortDurationStartTime === 0) {
                                 shortDurationStartTime = datum[i].ts;
                                 shortDurationBytesReceived = 0;
                             }
-                            let cumulatedChunkDownloadTime = datumE[i].tse - shortDurationStartTime;
+                            let cumulatedChunkDownloadTime = datumE[i].ts - shortDurationStartTime;
                             if (cumulatedChunkDownloadTime > 1) {
                                 shortDurationBytesReceived += datumE[i].bytes;
                                 chunkThroughputs.push((8 * shortDurationBytesReceived) / cumulatedChunkDownloadTime);
+                                console.log("pushing", (8 * shortDurationBytesReceived) / cumulatedChunkDownloadTime, shortDurationBytesReceived);
                                 shortDurationStartTime = 0;
                             } else {
                                 // continue cumulating short duration data
@@ -684,19 +686,19 @@ function FetchLoader(cfg) {
         }
     }
 
-    function _calculateDownloadedTimeByBytesReceived(downLoadedData, bytesReceived) {
+    function _calculateDownloadedTimeByBytesReceived(downloadedData, bytesReceived) {
         try {
-            downLoadedData = downLoadedData.filter(data => data.bytes > ((bytesReceived / 4) / downLoadedData.length));
-            if (downLoadedData.length > 1) {
+            downloadedData = downloadedData.filter(data => data.bytes > ((bytesReceived / 4) / downloadedData.length));
+            if (downloadedData.length > 1) {
                 let time = 0;
-                const avgTimeDistance = (downLoadedData[downLoadedData.length - 1].ts - downLoadedData[0].ts) / downLoadedData.length;
-                downLoadedData.forEach((data, index) => {
+                const avgTimeDistance = (downloadedData[downloadedData.length - 1].ts - downloadedData[0].ts) / downloadedData.length;
+                downloadedData.forEach((data, index) => {
                     // To be counted the data has to be over a threshold
-                    const next = downLoadedData[index + 1];
+                    const next = downloadedData[index + 1];
                     if (next) {
                         const distance = next.ts - data.ts;
                         time += distance < avgTimeDistance ? distance : 0;
-                        console.log("index: ", index, "ts: ", data.ts, "bytes: ", data.bytes, "dis: ", next.ts - data.ts, "avg: ", avgTimeDistance, "cur time: ", time, "total time: ", downLoadedData[downLoadedData.length - 1].ts - downLoadedData[0].ts);
+                        console.log("index: ", index, "ts: ", data.ts, "bytes: ", data.bytes, "dis: ", next.ts - data.ts, "avg: ", avgTimeDistance, "cur time: ", time, "total time: ", downloadedData[downloadedData.length - 1].ts - downloadedData[0].ts);
                     }
                 });
                 return time;
