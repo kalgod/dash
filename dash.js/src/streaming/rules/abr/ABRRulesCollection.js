@@ -205,7 +205,7 @@ function ABRRulesCollection(config) {
     }
 
     function getMaxQuality(rulesContext) {
-        const switchRequestArray = qualitySwitchRules.map(rule => rule.getMaxIndex(rulesContext));
+        let switchRequestArray = qualitySwitchRules.map(rule => rule.getMaxIndex(rulesContext));
         if (settings.get().streaming.abr.ABRStrategy === Constants.ABR_STRATEGY_BOLA) {
             switchRequestArray = [switchRequestArray[0]]
         }

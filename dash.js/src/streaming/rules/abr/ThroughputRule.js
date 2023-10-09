@@ -73,7 +73,7 @@ function ThroughputRule(config) {
         const latency = throughputHistory.getAverageLatency(mediaType);
         const useBufferOccupancyABR = rulesContext.useBufferOccupancyABR();
 
-        // console.log("in thr,", throughput);
+
         if (isNaN(throughput) || !currentBufferState || useBufferOccupancyABR) {
             return switchRequest;
         }
@@ -85,6 +85,7 @@ function ThroughputRule(config) {
                 switchRequest.reason = { throughput: throughput, latency: latency };
             }
         }
+        console.log("in thr,", throughput, switchRequest.quality);
 
         return switchRequest;
     }
