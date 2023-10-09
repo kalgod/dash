@@ -179,14 +179,21 @@ class Constants {
         this.ABR_FETCH_THROUGHPUT_CALCULATION_AAST = 'abrFetchThroughputCalculationAAST';
 
         /**
-         *  @constant {string} ABR_FETCH_THROUGHPUT_CALCULATION_FUSION Throughput calculation based on moof parsing
+         *  @constant {string} ABR_FETCH_THROUGHPUT_CALCULATION_FUSION Throughput calculation based on fusion
          *  @memberof Constants#
          *  @static
          */
         this.ABR_FETCH_THROUGHPUT_CALCULATION_FUSION = 'abrFetchThroughputCalculationFusion';
 
         /**
-         *  @constant {string} ABR_FETCH_THROUGHPUT_CALCULATION_SEG Throughput calculation based on moof parsing
+         *  @constant {string} ABR_FETCH_THROUGHPUT_CALCULATION_FLEET Throughput calculation based on fleet
+         *  @memberof Constants#
+         *  @static
+         */
+        this.ABR_FETCH_THROUGHPUT_CALCULATION_FLEET = 'abrFetchThroughputCalculationFleet';
+
+        /**
+         *  @constant {string} ABR_FETCH_THROUGHPUT_CALCULATION_SEG Throughput calculation based on seg
          *  @memberof Constants#
          *  @static
          */

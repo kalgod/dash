@@ -68,7 +68,7 @@ function FetchLoader(cfg) {
         // Variables will be used in the callback functions
         const requestStartTime = new Date();
         const initTime = Date.now();
-        // console.log("in load ",initTime);
+        console.log("in load ", initTime);
         const request = httpRequest.request;
 
         const headers = new Headers(); /*jshint ignore:line*/
@@ -139,7 +139,7 @@ function FetchLoader(cfg) {
                     // let tmp_len = parseInt(response.headers.get('Content-Length'), 10);
                     // console.log("totalbytes %s", tmp_len);
                     console.log('entering: ', httpRequest);
-                    // console.log("in fetch ",Date.now());
+                    console.log("in fetch ", Date.now());
                     if (!httpRequest.response) {
                         httpRequest.response = {};
                     }
@@ -502,6 +502,8 @@ function FetchLoader(cfg) {
                 return _calculateDownloadedTimeByBytesReceived(downloadedData, bytesReceived);
             case Constants.ABR_FETCH_THROUGHPUT_CALCULATION_FUSION:
                 return _calculateDownloadedTimeByFusion(startTimeData, endTimeData, downloadedData, bytesReceived, flag);
+            case Constants.ABR_FETCH_THROUGHPUT_CALCULATION_FLEET:
+                return _calculateDownloadedTimeByFleet(startTimeData, endTimeData, downloadedData, bytesReceived, flag);
             case Constants.ABR_FETCH_THROUGHPUT_CALCULATION_SEG:
                 return _calculateDownloadedTimeBySeg(downloadedData, bytesReceived);
             default:
@@ -532,7 +534,7 @@ function FetchLoader(cfg) {
             let datumE = endTimeData;
             console.log("flag ", flag)
             // if (flag==0) return _calculateDownloadedTimeByMoofParsing(startTimeData, endTimeData, bytesReceived);
-            if (flag > 15) {
+            if (flag > 1) {
                 let lastchunk = datumE[flag - 1].id;
                 // console.log("lastchunk", lastchunk);
                 if (lastchunk > 2) {
@@ -599,6 +601,77 @@ function FetchLoader(cfg) {
             console.log("real bw ", real_bw);
             if (real_bw == 0 || real_size == 0) {
                 console.log("fusion failed, fall back to moof");
+                return _calculateDownloadedTimeByMoofParsing(startTimeData, endTimeData, bytesReceived);
+            }
+            return bytesReceived * 8 / (real_bw + 1e-9);
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function _calculateDownloadedTimeByFleet(startTimeData, endTimeData, downloadedData, bytesReceived, flag) {
+        try {
+            let bw_all = [];
+            let datum = startTimeData;
+            let datumE = endTimeData;
+            console.log("in fleet ", flag);
+            // if (flag==0) return _calculateDownloadedTimeByMoofParsing(startTimeData, endTimeData, bytesReceived);
+
+            if (bw_all.length == 0) {
+                console.log("back A, small chunks");
+                let i = 0;
+                for (i = 0; i < datumE.length; i++) {
+                    let schunk = datum[i].id;
+                    let echunk = datumE[i].id;
+                    let j = 0;
+                    if (i < datumE.length - 1) {
+                        if (datum[i + 1].id == echunk) echunk -= 1;
+                    }
+                    if (schunk >= echunk) continue
+                    let tmp_bytes = 0;
+                    // console.log("schunk/echunk", i, schunk, echunk);
+                    for (j = schunk; j < echunk; j++) {
+                        tmp_bytes = downloadedData[j].bytes;
+                        let fusion_time = downloadedData[j].ts - downloadedData[j - 1].ts;
+                        fusion_time = Math.max(1, fusion_time);
+                        let tmp_bw = 8 * tmp_bytes / fusion_time;
+                        // console.log(tmp_bytes, fusion_time, tmp_bw);
+                        bw_all.push({ bw: tmp_bw, size: tmp_bytes });
+                    }
+                }
+            }
+
+
+            if (bw_all.length == 0) {
+                console.log("back B, first http chunk");
+                let fusion_bytes = downloadedData[0].bytes;
+                let fusion_time = downloadedData[0].ts - downloadedData[0].startts;
+                fusion_time = Math.max(1, fusion_time);
+                let fusion_bw = 8 * fusion_bytes / fusion_time;
+                bw_all.push({ bw: fusion_bw, size: fusion_bytes });
+            }
+
+            // console.log(bw_all);
+            // bw_all = bw_all.slice(-3)
+
+            let real_bw = 0;
+            let real_size = 0;
+            let i = 0;
+            for (i = 0; i < bw_all.length; i++) {
+                let cur_bw = bw_all[i].bw;
+                let cur_size = bw_all[i].size;
+                if (cur_size < 500) continue
+                real_bw += cur_bw * 1;
+                real_size += 1;
+                console.log("cur bw/size", i, cur_bw, cur_size);
+            }
+
+            // console.log(real_bw);
+            real_bw = real_bw / (real_size + 1e-9);
+            real_bw = Math.min(real_bw, 15000);
+            console.log("real bw ", real_bw);
+            if (real_bw == 0 || real_size == 0) {
+                console.log("fleet failed, fall back to moof");
                 return _calculateDownloadedTimeByMoofParsing(startTimeData, endTimeData, bytesReceived);
             }
             return bytesReceived * 8 / (real_bw + 1e-9);

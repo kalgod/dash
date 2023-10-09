@@ -104,7 +104,7 @@ function ThroughputHistory(config) {
         }
 
         const throughput = Math.round((8 * downloadBytes) / (throughputMeasureTime + 1e-9)); // bits/ms = kbits/s
-        console.log("downbytes ", downloadBytes, "time: ", throughputMeasureTime, "true bw: ", throughput);
+        console.log("downbytes ", downloadBytes, "time: ", throughputMeasureTime, "true bw: ", throughput, "downloadtimeinms: ", downloadTimeInMilliseconds, "latency: ", latencyTimeInMilliseconds);
 
         // Get estimated throughput (etp, in kbits/s) from CMSD response headers
         if (httpRequest.cmsd) {

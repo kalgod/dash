@@ -219,16 +219,16 @@ sleep(waitSeconds * 1000).then(() => {
     console.log("Waiting for player to setup.");
     // const hasLoaded = player.getBitrateInfoListFor("video");
     // console.log(hasLoaded, hasLoaded.length == 0);
-    // page.on('console', message => {
-    //   if (message.text().includes('JSHandle@object')) {
-    //     message.args().forEach(async arg => {
-    //       const value = await arg.jsonValue();
-    //       console.dir(value);
-    //     });
-    //   } else {
-    //     console.log(`[${message.type().toUpperCase()}] ${message.text()}`);
-    //   }
-    // });
+    page.on('console', message => {
+      if (message.text().includes('JSHandle@object')) {
+        message.args().forEach(async arg => {
+          const value = await arg.jsonValue();
+          console.dir(value);
+        });
+      } else {
+        console.log(`[${message.type().toUpperCase()}] ${message.text()}`);
+      }
+    });
     await page.evaluate(() => {
       return new Promise(resolve => {
         const hasLoaded = player.getBitrateInfoListFor("video").length !== 0;

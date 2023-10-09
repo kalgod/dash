@@ -37,7 +37,7 @@ import NotFragmentedTextBufferController from './text/NotFragmentedTextBufferCon
 import ScheduleController from './controllers/ScheduleController';
 import RepresentationController from '../dash/controllers/RepresentationController';
 import FactoryMaker from '../core/FactoryMaker';
-import {checkInteger} from './utils/SupervisorTools';
+import { checkInteger } from './utils/SupervisorTools';
 import EventBus from '../core/EventBus';
 import Events from '../core/events/Events';
 import MediaPlayerEvents from './MediaPlayerEvents';
@@ -47,9 +47,9 @@ import DashJSError from './vo/DashJSError';
 import Debug from '../core/Debug';
 import RequestModifier from './utils/RequestModifier';
 import URLUtils from '../streaming/utils/URLUtils';
-import {PlayListTrace} from './vo/metrics/PlayList';
+import { PlayListTrace } from './vo/metrics/PlayList';
 import SegmentsController from '../dash/controllers/SegmentsController';
-import {HTTPRequest} from './vo/metrics/HTTPRequest';
+import { HTTPRequest } from './vo/metrics/HTTPRequest';
 import TimeUtils from './utils/TimeUtils';
 
 
@@ -686,6 +686,7 @@ function StreamProcessor(config) {
         }, { mediaType: type, streamId: streamInfo.id });
 
         // Abort appending segments to the buffer. Also adjust the appendWindow as we might have been in the progress of prebuffering stuff.
+        scheduleController.setCheckPlaybackQuality(false);
         bufferController.prepareForForceReplacementQualitySwitch(representationInfo)
             .then(() => {
                 _bufferClearedForReplacement();
@@ -735,8 +736,9 @@ function StreamProcessor(config) {
                 _prepareForDefaultQualitySwitch(representationInfo);
             }
         } else {
-            scheduleController.startScheduleTimer();
-            qualityChangeInProgress = false;
+            // scheduleController.startScheduleTimer();
+            // qualityChangeInProgress = false;
+            _prepareForDefaultQualitySwitch(representationInfo);
         }
     }
 
@@ -752,6 +754,7 @@ function StreamProcessor(config) {
 
         bufferController.updateBufferTimestampOffset(representationInfo)
             .then(() => {
+                scheduleController.setCheckPlaybackQuality(false);
                 if (mediaInfo.segmentAlignment || mediaInfo.subSegmentAlignment) {
                     scheduleController.startScheduleTimer();
                 } else {

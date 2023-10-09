@@ -73,6 +73,10 @@
                     buffer: {
                         stallThreshold: 0.05,
                     },
+                    cacheLoadThresholds: {
+                        video: 0,
+                        audio: 0
+                    },
                     abr: {
                         // useDefaultABRRules: false,
                         useDefaultABRRules: true,
@@ -92,6 +96,7 @@
                         // fetchThroughputCalculationMode: 'abrFetchThroughputCalculationAAST',
                         // fetchThroughputCalculationMode: 'abrFetchThroughputCalculationDownloadedData',
                         fetchThroughputCalculationMode: 'abrFetchThroughputCalculationFusion',
+                        // fetchThroughputCalculationMode: 'abrFetchThroughputCalculationFleet',
                         // fetchThroughputCalculationMode: 'abrFetchThroughputCalculationSeg',
                         movingAverageMethod: 'slidingWindow'
                         // movingAverageMethod: 'ewma'
@@ -450,7 +455,7 @@
                     const streamInfo = player.getActiveStream().getStreamInfo()
                     const isDynamic = streamInfo && streamInfo.manifestInfo ? streamInfo.manifestInfo.isDynamic : null;
                     const throughput = Math.round(player.getAverageThroughput('video', isDynamic));
-                    console.log(player);
+                    // console.log(player);
                     const throughputhis = player.getThroughputHis().getDict()[e.mediaType]
 
                     // console.log("player is",player,segmentKey,throughputhis,new Date(e.request.firstByteDate).getTime() / 1000)

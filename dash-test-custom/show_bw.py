@@ -105,7 +105,7 @@ for trace in traces:
         cha1_all.append(cha1)
         bw_all.append(real_bw)
         # print(segs,segs.keys())
-        print(trace,bw,cha,cha1)
+        # print(trace,bw,cha,cha1)
     print("done for",trace)
     if (len(cha_all)!=0): print("mea and pre and bw: ",100*np.mean(cha_all),100*np.mean(cha1_all),np.mean(bw_all))
 print("all done")
