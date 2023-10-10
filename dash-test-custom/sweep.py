@@ -12,7 +12,7 @@ import time
 
 meas=["fusion","fleet","imoof"]
 pres=["slide"]
-algs=["l2all","rmpc"]
+algs=["l2all","rb"]
 
 for mea in meas:
     for pre in pres:
