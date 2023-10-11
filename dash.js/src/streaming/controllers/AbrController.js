@@ -792,7 +792,7 @@ function AbrController() {
      */
     function getQualityForBitrate(mediaInfo, bitrate, streamId, latency = null) {
         const voRepresentation = mediaInfo && mediaInfo.type ? streamProcessorDict[streamId][mediaInfo.type].getRepresentationInfo() : null;
-
+        // console.log(mediaInfo, bitrate, streamId, latency, voRepresentation);
         if (settings.get().streaming.abr.useDeadTimeLatency && latency && voRepresentation && voRepresentation.fragmentDuration) {
             latency = latency / 1000;
             const fragmentDuration = voRepresentation.fragmentDuration;

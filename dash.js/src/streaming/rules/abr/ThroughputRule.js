@@ -80,12 +80,13 @@ function ThroughputRule(config) {
 
         if (abrController.getAbandonmentStateFor(streamId, mediaType) !== MetricsConstants.ABANDON_LOAD) {
             if (currentBufferState.state === MetricsConstants.BUFFER_LOADED || isDynamic) {
+                // console.log("enter getq", mediaInfo, throughput, streamId, latency)
                 switchRequest.quality = abrController.getQualityForBitrate(mediaInfo, throughput, streamId, latency);
                 scheduleController.setTimeToLoadDelay(0);
                 switchRequest.reason = { throughput: throughput, latency: latency };
             }
         }
-        console.log("in thr,", throughput, switchRequest.quality);
+        console.log("in thr,", throughput, latency, switchRequest.quality);
 
         return switchRequest;
     }
