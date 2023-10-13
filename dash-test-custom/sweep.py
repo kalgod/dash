@@ -10,7 +10,7 @@ import time
 # pres=["slide","ewma"]
 # algs=["l2all","rb","lolp"]
 
-meas=["fusion-cache","fusion-noslow"]
+meas=["aast","moof","down"]
 pres=["slide"]
 algs=["l2all","rb"]
 

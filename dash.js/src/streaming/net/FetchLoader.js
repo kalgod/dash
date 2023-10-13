@@ -663,7 +663,7 @@ function FetchLoader(cfg) {
                 if (cur_size < 500) continue
                 real_bw += cur_bw * 1;
                 real_size += 1;
-                console.log("cur bw/size", i, cur_bw, cur_size);
+                // console.log("cur bw/size", i, cur_bw, cur_size);
             }
 
             // console.log(real_bw);

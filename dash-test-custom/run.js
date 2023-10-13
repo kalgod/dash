@@ -1,5 +1,7 @@
 const fs = require("fs");
 const puppeteer = require("puppeteer-core");
+const jsdom = require("jsdom");
+const { JSDOM } = jsdom;
 const stats = require("./stats");
 // const CHROME_PATH = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 const CHROME_PATH = "/opt/google/chrome/chrome";
@@ -166,34 +168,22 @@ sleep(waitSeconds * 1000).then(() => {
 
     // 定义数组保存内容
     let traceData = [];
-
-    // 使用fs模块读取文件
-    // const fs = require('fs');
-
     fs.readFile(pre_path + dirs + '/' + trace, 'utf8', (err, data) => {
       if (err) {
         console.log(err);
         return;
       }
-
-      // 按行split文件内容
       const lines = data.split('\n');
-
-      // 遍历每行
       lines.forEach(line => {
         if (line.trim().length == 0) return;
-
-        // 每行内容split空格分隔
         const bandwidthTime = line.split(' ');
-
-        // 保存到数组 
         traceData.push({
           bandwidth: parseFloat(bandwidthTime[1]),
           time: parseFloat(bandwidthTime[0])
         });
-
       });
     });
+
     const page = await browser.newPage();
     page.setUserAgent("puppeteer");
 
@@ -202,13 +192,16 @@ sleep(waitSeconds * 1000).then(() => {
       fs.mkdirSync(folder);
     }
 
+    let targethtml = "/home/cjh/work/dash/dash.js/samples/low-latency/test.html";
+    prepare_html(targethtml, alg);
+
     const { exec } = require('child_process');
     tmp_comm = 'python3 trace_run.py ' + pre_path + dirs + '/' + trace + ' ./bw_truth/' + dirs + '/' + trace + "/" + alg;
     // console.log("%s", tmp_comm);
     // exec(tmp_comm);
     console.log("now1", Date.now());
 
-    let targethtml = "file:///home/cjh/work/dash/dash.js/samples/low-latency/" + alg + ".html"
+    targethtml = "file://" + targethtml;
     await page.goto(targethtml);
 
     console.log("now2", Date.now(), targethtml);
@@ -217,8 +210,7 @@ sleep(waitSeconds * 1000).then(() => {
     readTrace(cdpClient, traceData, './bw_truth/' + dirs + '/' + trace + "/" + alg);
 
     console.log("Waiting for player to setup.");
-    // const hasLoaded = player.getBitrateInfoListFor("video");
-    // console.log(hasLoaded, hasLoaded.length == 0);
+
     // page.on('console', message => {
     //   if (message.text().includes('JSHandle@object')) {
     //     message.args().forEach(async arg => {
@@ -229,6 +221,7 @@ sleep(waitSeconds * 1000).then(() => {
     //     console.log(`[${message.type().toUpperCase()}] ${message.text()}`);
     //   }
     // });
+
     await page.evaluate(() => {
       return new Promise(resolve => {
         const hasLoaded = player.getBitrateInfoListFor("video").length !== 0;
@@ -339,6 +332,96 @@ sleep(waitSeconds * 1000).then(() => {
 
     }
 
+  }
+
+  function prepare_html(targethtml, alg) {
+    let tmp = alg.split("-")
+    let abrval = tmp[2];
+    let meaval = tmp[0];
+    let preval = tmp[1];
+    let abrreplace, meareplace, prereplace;
+    if (abrval.includes("lolp")) {
+      abrreplace = 'abrLoLP';
+    }
+    else if (abrval.includes("l2all")) {
+      abrreplace = 'abrL2A';
+    }
+    else if (abrval.includes("rb")) {
+      abrreplace = 'abrThroughput';
+    }
+    else if (abrval.includes("rmpc")) {
+      abrreplace = 'RmpcRule';
+    }
+    else if (abrval.includes("bola")) {
+      abrreplace = 'abrBola';
+    }
+    else if (abrval.includes("dyn")) {
+      abrreplace = 'abrDynamic';
+    }
+    else {
+      console.log("wrong abr");
+      process.exit(0);
+    }
+
+    if (meaval.includes("fusion")) {
+      meareplace = 'abrFetchThroughputCalculationFusion';
+    }
+    else if (meaval.includes("fleet")) {
+      meareplace = 'abrFetchThroughputCalculationFleet';
+    }
+    else if (meaval.includes("imoof")) {
+      meareplace = 'abrFetchThroughputCalculationIMoofParsing';
+    }
+    else if (meaval.includes("moof")) {
+      meareplace = 'abrFetchThroughputCalculationMoofParsing';
+    }
+    else if (meaval.includes("aast")) {
+      meareplace = 'abrFetchThroughputCalculationAAST';
+    }
+    else if (meaval.includes("down")) {
+      meareplace = 'abrFetchThroughputCalculationDownloadedData';
+    }
+    else if (meaval.includes("seg")) {
+      meareplace = 'abrFetchThroughputCalculationSeg';
+    }
+    else {
+      console.log("wrong mea");
+      process.exit(0);
+    }
+
+    if (preval.includes("slide")) {
+      prereplace = 'slidingWindow';
+    }
+    else if (preval.includes("ewma")) {
+      prereplace = 'ewma';
+    }
+    else {
+      console.log("wrong pre");
+      process.exit(0);
+    }
+
+    let fileContent = fs.readFileSync(targethtml, 'utf8');
+    // 找到目标字符串并提取其中的内容
+    let regex1 = /let abrval = '([^']+)'/;
+    let match1 = fileContent.match(regex1);
+
+    let regex2 = /let meaval = '([^']+)'/;
+    let match2 = fileContent.match(regex2);
+
+    let regex3 = /let preval = '([^']+)'/;
+    let match3 = fileContent.match(regex3);
+
+    if (match1[1] && match2[1] && match3[1]) {
+      let modifiedContent = fileContent.replace("let abrval = '" + match1[1] + "'", "let abrval = '" + abrreplace + "'");
+      modifiedContent = modifiedContent.replace("let meaval = '" + match2[1] + "'", "let meaval = '" + meareplace + "'");
+      modifiedContent = modifiedContent.replace("let preval = '" + match3[1] + "'", "let preval = '" + prereplace + "'");
+      fs.writeFileSync(targethtml, modifiedContent, 'utf8');
+    } else {
+      console.log('未在文件中找到目标字符串。');
+      process.exit(0);
+    }
+
+    console.log(abrreplace, meareplace, prereplace);
   }
 
   function setNetworkSpeedInMbps(client, kbps) {
