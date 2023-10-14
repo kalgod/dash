@@ -222,6 +222,14 @@ function ThroughputHistory(config) {
     }
 
     function getAverageEwma(isThroughput, mediaType) {
+        // const sampleSize = getSampleSize(isThroughput, mediaType, true);
+        // const dict = isThroughput ? throughputDict : latencyDict;
+        // let arr = dict[mediaType];
+        // if (sampleSize === 0 || !arr || arr.length === 0) {
+        //     return NaN;
+        // }
+        // return arr[arr.length - 1];
+
         const halfLife = isThroughput ? ewmaHalfLife.throughputHalfLife : ewmaHalfLife.latencyHalfLife;
         const ewmaObj = isThroughput ? ewmaThroughputDict[mediaType] : ewmaLatencyDict[mediaType];
 

@@ -59,13 +59,13 @@
             var useCustomPlaybackControl = document.getElementById('use-custom-playback-control').checked;
             var playbackBufferMin = parseFloat(document.getElementById('playback-buffer-min').value, 10);
 
-            let abrval = 'abrDynamic';
+            let abrval = 'abrThroughput';
             setabrStrategy(abrval);
 
             let meaval = 'abrFetchThroughputCalculationFusion';
             setmeaStrategy(meaval);
 
-            let preval = 'slidingWindow';
+            let preval = 'ewma';
             setpreStrategy(preval);
 
             let usedefaultabr;
