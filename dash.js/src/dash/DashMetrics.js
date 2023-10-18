@@ -59,7 +59,7 @@ function DashMetrics(config) {
     let metricsModel = config.metricsModel;
 
     function setup() {
-        metricsModel = metricsModel || MetricsModel(context).getInstance({settings: config.settings});
+        metricsModel = metricsModel || MetricsModel(context).getInstance({ settings: config.settings });
         resetInitialSettings();
     }
 
@@ -117,12 +117,31 @@ function DashMetrics(config) {
     function getCurrentBufferLevel(mediaType) {
         const metrics = metricsModel.getMetricsFor(mediaType, true);
         const metric = getCurrent(metrics, MetricsConstants.BUFFER_LEVEL);
-
         if (metric) {
             return Round10.round10(metric.level / 1000, -3);
         }
 
         return 0;
+    }
+
+    /**
+     * Returns the current buffer level for a given media type
+     * @param {MediaType} mediaType
+     * @returns {number}
+     * @memberof module:DashMetrics
+     * @instance
+     */
+    function getCurrentBufferInfo(mediaType) {
+        const metrics = metricsModel.getMetricsFor(mediaType, true);
+        const metric = getCurrent(metrics, MetricsConstants.BUFFER_LEVEL);
+        let res = [0, 0];
+        if (metric) {
+            let level = Round10.round10(metric.level / 1000, -3);
+            let time = new Date(metric.t).getTime();
+            res[0] = time;
+            res[1] = level;
+        }
+        return res;
     }
 
     /**
@@ -154,7 +173,7 @@ function DashMetrics(config) {
      * @instance
      * @ignore
      */
-    function clearAllCurrentMetrics () {
+    function clearAllCurrentMetrics() {
         metricsModel.clearAllCurrentMetrics();
     }
 
@@ -234,6 +253,13 @@ function DashMetrics(config) {
             return null;
         }
         const list = metrics[metricName];
+        let list_tmp = [...list];
+
+        // if (metricName.includes(MetricsConstants.BUFFER_LEVEL) && list_tmp.length > 0) {
+        //     const date = new Date(list_tmp[list_tmp.length - 1].t);
+        //     const timestamp = date.getTime();
+        //     console.log("in get current,", list_tmp.length);
+        // }
         return (!list || list.length === 0) ? null : list[list.length - 1];
     }
 
@@ -494,7 +520,7 @@ function DashMetrics(config) {
      * @ignore
      */
     function createPlaylistTraceMetrics(representationId, mediaStartTime, speed) {
-        if (playListTraceMetricsClosed === true ) {
+        if (playListTraceMetricsClosed === true) {
             playListTraceMetricsClosed = false;
             playListTraceMetrics = new PlayListTrace();
 
@@ -549,6 +575,7 @@ function DashMetrics(config) {
         getCurrentRepresentationSwitch,
         getCurrentBufferState,
         getCurrentBufferLevel,
+        getCurrentBufferInfo,
         getCurrentHttpRequest,
         getHttpRequests,
         getCurrentDroppedFrames,

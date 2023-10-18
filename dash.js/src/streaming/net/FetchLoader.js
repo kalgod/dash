@@ -139,7 +139,7 @@ function FetchLoader(cfg) {
                     // let tmp_len = parseInt(response.headers.get('Content-Length'), 10);
                     // console.log("totalbytes %s", tmp_len);
                     console.log('entering: ', httpRequest);
-                    console.log("in fetch ", Date.now());
+                    console.log("in fetch ", " time: ", Date.now(), " cur buffer: ", dashMetrics.getCurrentBufferInfo(request.mediaType));
                     if (!httpRequest.response) {
                         httpRequest.response = {};
                     }
@@ -177,7 +177,7 @@ function FetchLoader(cfg) {
 
                     const totalBytes = parseInt(response.headers.get('Content-Length'), 10);
                     let flag = parseInt(response.headers.get('flag'), 10);
-                    console.log("flag ", flag);
+                    // console.log("flag ", flag);
                     let bytesReceived = 0;
                     let signaledFirstByte = false;
                     let remaining = new Uint8Array();
@@ -281,7 +281,7 @@ function FetchLoader(cfg) {
 
                         function pushflag2(curts, curcount, Flag2) {
                             const end = Flag2.lastCompletedOffset + Flag2.size;
-                            // console.log("push flag2 end ", end);
+                            console.log("get chunk: ", endTimeData.length + 1, " time: ", Date.now(), " cur buffer: ", dashMetrics.getCurrentBufferInfo(request.mediaType));
                             // Store the end time of each chunk download  with its size in array EndTimeData
                             endTimeData.push({
                                 ts: curts, /* jshint ignore:line */
@@ -292,7 +292,7 @@ function FetchLoader(cfg) {
                             if (end === remaining.length) {
                                 data = remaining;
                                 remaining = new Uint8Array();
-                                console.log("end==remain remain!!!!!!!!!!!!!!!!!!!!!!!!!!! ", remaining.length);
+                                // console.log("end==remain remain!!!!!!!!!!!!!!!!!!!!!!!!!!! ", remaining.length);
                             } else {
                                 data = new Uint8Array(remaining.subarray(0, end));
                                 remaining = remaining.subarray(end);

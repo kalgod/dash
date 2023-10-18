@@ -65,6 +65,7 @@ function RmpcRuleClass(config) {
             if (next_bit[i] < future_bw) return i;
         }
         return 0;
+
     }
 
     function getMaxIndex(rulesContext) {
@@ -75,7 +76,7 @@ function RmpcRuleClass(config) {
 
             // A smarter (real) rule could need analyze playback metrics to take
             // bitrate switching decision. Printing metrics here as a reference
-            // console.log(metrics);
+            console.log(metrics);
 
             // Get current bitrate
             let streamController = StreamController(context).getInstance();
@@ -137,7 +138,7 @@ function RmpcRuleClass(config) {
              * Select next quality
              */
 
-            console.log("in rmpc, sum: ", flag, httpRequest._quality, currentQuality, interval, currentBitrate, currentBufferLevel, throughput, latency, playbackRate);
+            console.log("in rmpc, sum: ", currentQuality, currentBitrate, currentBufferLevel, throughput, latency, playbackRate);
             let next_q = decision(currentBitrate, currentBufferLevel, throughput, latency, playbackRate, next_bit, flag);
             switchRequest.quality = next_q;
             // switchRequest.quality = abrController.getQualityForBitrate(mediaInfo, throughput, latency);
