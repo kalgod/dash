@@ -253,12 +253,17 @@ function DashMetrics(config) {
             return null;
         }
         const list = metrics[metricName];
-        let list_tmp = [...list];
 
+        // let list_tmp = [...list];
+        // let size_tmp = list_tmp.length;
+        // list_tmp = list_tmp.slice(-3);
         // if (metricName.includes(MetricsConstants.BUFFER_LEVEL) && list_tmp.length > 0) {
-        //     const date = new Date(list_tmp[list_tmp.length - 1].t);
-        //     const timestamp = date.getTime();
-        //     console.log("in get current,", list_tmp.length);
+        //     let i = 0;
+        //     for (i = 0; i < list_tmp.length; i++) {
+        //         const date = new Date(list_tmp[i].t);
+        //         const timestamp = date.getTime();
+        //         console.log("in get current,", i, size_tmp, timestamp, list_tmp[i].level);
+        //     }
         // }
         return (!list || list.length === 0) ? null : list[list.length - 1];
     }
@@ -372,6 +377,7 @@ function DashMetrics(config) {
      * @ignore
      */
     function addHttpRequest(request, responseURL, responseStatus, responseHeaders, traces, cmsd) {
+        // console.log(request);
         metricsModel.addHttpRequest(request.mediaType,
             null,
             request.type,
@@ -388,7 +394,7 @@ function DashMetrics(config) {
             responseHeaders,
             traces,
             request.fileLoaderType,
-            cmsd);
+            cmsd, request);
     }
 
     /**

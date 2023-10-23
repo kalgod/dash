@@ -185,6 +185,8 @@ def gen_bw(segs):
     return mea,pre
 
 def gen(segs,trace,bw):
+    bit_max=6000
+    bit_min=200
     mea,pre=gen_bw(segs)
     real_bw=comp(mea,pre,trace,bw)
     b=[]
@@ -222,13 +224,13 @@ def gen(segs,trace,bw):
         rebuf=r[i]
         latency=l[i]
         play=p[i]
-        if (latency<1.6): qoe=qoe+0.5*bitrate-4000*rebuf-10*latency-200*abs(play-1)
-        else: qoe=qoe+0.5*bitrate-4000*rebuf-400*latency-200*abs(play-1)
+        if (latency<1.6): qoe=qoe+0.5*bitrate-bit_max*rebuf-0.05*bit_min*latency-bit_min*abs(play-1)
+        else: qoe=qoe+0.5*bitrate-bit_max*rebuf-0.1*bit_max*latency-bit_min*abs(play-1)
         if (i!=0):
             flu=abs(bitrate-b[i-1])
         else:
             flu=0
-        qoe-=1*flu
+        qoe-=0.1*flu
         f.append(flu)
         # print(i,"{:.2f}\t,{:.2f}\t,{:.2f}\t,{:.2f}\t,{:.2f}\t,{:.2f}\t,{:.2f}\t,{:.2f}\t,{:.2f}".format(mea[i][0],pre[i],real_bw[i],bitrate,1000*rebuf,latency,play,flu,qoe))
     return len(b),np.mean(b),np.sum(r),np.mean(l),np.mean(p),np.mean(f),qoe

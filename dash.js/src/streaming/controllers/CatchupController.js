@@ -203,6 +203,7 @@ function CatchupController() {
             let newRate;
             const currentPlaybackRate = videoModel.getPlaybackRate();
             const liveCatchupPlaybackRates = mediaPlayerModel.getCatchupPlaybackRates();
+            // console.log(liveCatchupPlaybackRates);
             const bufferLevel = playbackController.getBufferLevel();
             const deltaLatency = _getLatencyDrift();
 
@@ -236,6 +237,7 @@ function CatchupController() {
                 // Obtain newRate and apply to video model.  Don't change playbackrate for small variations (don't overload element with playbackrate changes)
                 if (newRate && Math.abs(currentPlaybackRate - newRate) >= minPlaybackRateChange) { // non-null
                     logger.debug(`[CatchupController]: Setting playback rate to ${newRate}`);
+                    // console.log("new rate", newRate);
                     videoModel.setPlaybackRate(newRate);
                 }
             }

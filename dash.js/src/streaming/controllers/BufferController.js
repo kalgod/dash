@@ -40,7 +40,7 @@ import Debug from '../../core/Debug';
 import InitCache from '../utils/InitCache';
 import DashJSError from '../vo/DashJSError';
 import Errors from '../../core/errors/Errors';
-import {HTTPRequest} from '../vo/metrics/HTTPRequest';
+import { HTTPRequest } from '../vo/metrics/HTTPRequest';
 import MediaPlayerEvents from '../../streaming/MediaPlayerEvents';
 
 const BUFFER_END_THRESHOLD = 0.5;
@@ -846,6 +846,8 @@ function BufferController(config) {
             bufferLevel = Math.max(getBufferLength(referenceTime, tolerance), 0);
             _triggerEvent(Events.BUFFER_LEVEL_UPDATED, { mediaType: type, bufferLevel: bufferLevel });
             checkIfSufficientBuffer();
+            console.log("update buffer", Date.now(), bufferLevel);
+            // console.trace();
         }
     }
 
@@ -1105,6 +1107,8 @@ function BufferController(config) {
     }
 
     function getBufferLevel() {
+        // console.trace();
+        // _updateBufferLevel();
         return bufferLevel;
     }
 

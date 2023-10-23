@@ -34,6 +34,8 @@ import Settings from '../../core/Settings';
 import Constants from '../constants/Constants';
 import { modifyRequest } from '../utils/RequestModifier';
 
+let tmp_cha = [];
+
 /**
  * @module FetchLoader
  * @ignore
@@ -139,7 +141,9 @@ function FetchLoader(cfg) {
                     // let tmp_len = parseInt(response.headers.get('Content-Length'), 10);
                     // console.log("totalbytes %s", tmp_len);
                     console.log('entering: ', httpRequest);
-                    console.log("in fetch ", " time: ", Date.now(), " cur buffer: ", dashMetrics.getCurrentBufferInfo(request.mediaType));
+                    // tmp_cha.push(Date.now() - dashMetrics.getCurrentBufferInfo(request.mediaType)[0]);
+                    // let average = tmp_cha.reduce((a, b) => a + b, 0) / tmp_cha.length;
+                    console.log("cal jiange, in fetch ", httpRequest.url, " time: ", Date.now(), " cur buffer: ", dashMetrics.getCurrentBufferInfo(request.mediaType));
                     if (!httpRequest.response) {
                         httpRequest.response = {};
                     }
@@ -256,11 +260,12 @@ function FetchLoader(cfg) {
                                         total: isNaN(totalBytes) ? bytesReceived : totalBytes,
                                         lengthComputable: true,
                                         time: calculateDownloadedTime(calculationMode, startTimeData, endTimeData, downloadedData, bytesReceived, flag),
-                                        startts: downloadedData[0].ts,
-                                        endts: downloadedData[downloadedData.length - 1].ts,
+                                        chunks: endTimeData,
                                         stream: true
                                     });
                                 }
+                                httpRequest.chunks = endTimeData;
+                                // console.log(httpRequest);
 
                                 httpRequest.response.response = remaining.buffer;
                             }
@@ -281,7 +286,8 @@ function FetchLoader(cfg) {
 
                         function pushflag2(curts, curcount, Flag2) {
                             const end = Flag2.lastCompletedOffset + Flag2.size;
-                            console.log("get chunk: ", endTimeData.length + 1, " time: ", Date.now(), " cur buffer: ", dashMetrics.getCurrentBufferInfo(request.mediaType));
+                            let cur_buffer = dashMetrics.getCurrentBufferInfo(request.mediaType);
+                            console.log("get chunk: ", endTimeData.length + 1, " time: ", Date.now(), " cur buffer: ", cur_buffer[0], cur_buffer[1]);
                             // Store the end time of each chunk download  with its size in array EndTimeData
                             endTimeData.push({
                                 ts: curts, /* jshint ignore:line */
@@ -292,7 +298,7 @@ function FetchLoader(cfg) {
                             if (end === remaining.length) {
                                 data = remaining;
                                 remaining = new Uint8Array();
-                                // console.log("end==remain remain!!!!!!!!!!!!!!!!!!!!!!!!!!! ", remaining.length);
+                                console.log("end==remain remain!!!!!!!!!!!!!!!!!!!!!!!!!!! ", remaining.length);
                             } else {
                                 data = new Uint8Array(remaining.subarray(0, end));
                                 remaining = remaining.subarray(end);
@@ -535,6 +541,7 @@ function FetchLoader(cfg) {
             console.log("flag ", flag)
             // if (flag==0) return _calculateDownloadedTimeByMoofParsing(startTimeData, endTimeData, bytesReceived);
             if (flag > 1) {
+
                 let lastchunk = datumE[flag - 1].id;
                 // console.log("lastchunk", lastchunk);
                 if (lastchunk > 2) {
@@ -548,12 +555,13 @@ function FetchLoader(cfg) {
                     fusion_time = Math.max(1, fusion_time);
                     let fusion_bw = 8 * fusion_bytes / fusion_time;
                     bw_all.push({ bw: fusion_bw, size: fusion_bytes });
+                    console.log("testing mode, using flag", fusion_bw, flag);
                     console.log("fusion bytes time and bw ", fusion_bytes, fusion_time, fusion_bw);
                 }
             }
 
             if (bw_all.length == 0) {
-                console.log("back A, small chunks");
+
                 let i = 0;
                 for (i = 0; i < 1; i++) {
                     let schunk = datum[i].id;
@@ -568,17 +576,19 @@ function FetchLoader(cfg) {
                     let tmp_bw = 8 * tmp_bytes / fusion_time;
                     // console.log(tmp_bytes, fusion_time, tmp_bw);
                     bw_all.push({ bw: tmp_bw, size: tmp_bytes });
+                    console.log("testing mode,back A, small chunks", tmp_bw, flag);
                 }
             }
 
 
             if (bw_all.length == 0) {
-                console.log("back B, first http chunk");
+
                 let fusion_bytes = downloadedData[0].bytes;
                 let fusion_time = downloadedData[0].ts - downloadedData[0].startts;
                 fusion_time = Math.max(1, fusion_time);
                 let fusion_bw = 8 * fusion_bytes / fusion_time;
                 bw_all.push({ bw: fusion_bw, size: fusion_bytes });
+                console.log("testing mode,back B, first http chunk", fusion_bw, flag);
             }
 
             // console.log(bw_all);

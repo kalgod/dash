@@ -749,6 +749,8 @@ function PlaybackController() {
         streamController.getActiveStreamProcessors().forEach(p => {
             if (!filterList || filterList.length === 0 || filterList.indexOf(p.getType()) === -1) {
                 const bl = p.getBufferLevel();
+                console.log("in getbuffer", Date.now(), bl);
+                // console.trace();
                 if (bufferLevel === null) {
                     bufferLevel = bl;
                 } else {

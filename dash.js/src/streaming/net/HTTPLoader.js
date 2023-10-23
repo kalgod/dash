@@ -30,7 +30,7 @@
  */
 import XHRLoader from './XHRLoader';
 import FetchLoader from './FetchLoader';
-import {HTTPRequest} from '../vo/metrics/HTTPRequest';
+import { HTTPRequest } from '../vo/metrics/HTTPRequest';
 import FactoryMaker from '../../core/FactoryMaker';
 import DashJSError from '../vo/DashJSError';
 import CmcdModel from '../models/CmcdModel';
@@ -113,22 +113,24 @@ function HTTPLoader(cfg) {
             throw new Error('config object is not correct or missing');
         }
 
-        const addHttpRequestMetric = function(success) {
+        const addHttpRequestMetric = function (success) {
+            // console.log(request, httpRequest);
             request.requestStartDate = requestStartTime;
             request.requestEndDate = new Date();
             request.firstByteDate = request.firstByteDate || requestStartTime;
             request.fileLoaderType = fileLoaderType;
+            request.chunks = httpRequest.chunks;
 
             const responseUrl = httpRequest.response ? httpRequest.response.responseURL : null;
             const responseStatus = httpRequest.response ? httpRequest.response.status : null;
             const responseHeaders = httpRequest.response && httpRequest.response.getAllResponseHeaders ? httpRequest.response.getAllResponseHeaders() :
                 httpRequest.response ? httpRequest.response.responseHeaders : null;
-    
+
             const cmsd = responseHeaders && settings.get().streaming.cmsd && settings.get().streaming.cmsd.enabled ? cmsdModel.parseResponseHeaders(responseHeaders, request.mediaType) : null;
-    
+
             dashMetrics.addHttpRequest(request, responseUrl, responseStatus, responseHeaders, success ? traces : null, cmsd);
         }
-    
+
         const handleLoaded = function (success) {
             needFailureReport = false;
 
