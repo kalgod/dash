@@ -67,7 +67,7 @@ if (mode==0):
     bw=range(total_trace)
     for i in trace:
         for j in bw:
-            run_mm(i,str(j),alg)
+            run_chrome(i,str(j),alg)
 else:
     print("in mode 1")
     traces=os.listdir(pre_path)

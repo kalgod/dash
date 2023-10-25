@@ -207,20 +207,20 @@ sleep(waitSeconds * 1000).then(() => {
     console.log("now2", Date.now(), targethtml);
     const cdpClient = await page.target().createCDPSession();
 
-    // readTrace(cdpClient, traceData, './bw_truth/' + dirs + '/' + trace + "/" + alg);
+    readTrace(cdpClient, traceData, './bw_truth/' + dirs + '/' + trace + "/" + alg);
 
     console.log("Waiting for player to setup.");
 
-    page.on('console', message => {
-      if (message.text().includes('JSHandle@object')) {
-        message.args().forEach(async arg => {
-          const value = await arg.jsonValue();
-          console.dir(value);
-        });
-      } else {
-        console.log(`[${message.type().toUpperCase()}] ${message.text()}`);
-      }
-    });
+    // page.on('console', message => {
+    //   if (message.text().includes('JSHandle@object')) {
+    //     message.args().forEach(async arg => {
+    //       const value = await arg.jsonValue();
+    //       console.dir(value);
+    //     });
+    //   } else {
+    //     console.log(`[${message.type().toUpperCase()}] ${message.text()}`);
+    //   }
+    // });
 
     await page.evaluate(() => {
       return new Promise(resolve => {

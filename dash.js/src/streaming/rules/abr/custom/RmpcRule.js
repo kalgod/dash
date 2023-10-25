@@ -112,7 +112,7 @@ function RmpcRuleClass(config) {
         let rebuf = 0;
         for (i = 0; i < tmp_chunks.length; i++) {
             let downtime = 8 * tmp_chunks[i] / (1024 * future_bw);
-            if (i >= last_flag) downtime += single_chunk;
+            // if (i >= last_flag) downtime += single_chunk;
             if (i == 0) {
                 if (isdiff) downtime += 60 / 1000;
                 else downtime += 26 / 1000;
@@ -144,10 +144,10 @@ function RmpcRuleClass(config) {
             let seg_rebuf = res.rebuf;
             let seg_qoe = 0;
             if (next_latency < 1.6) {
-                seg_qoe = 0.5 * bitrate_current - bit_max * seg_rebuf - bit_max * Math.abs(next_latency - targetLiveDelay) - bit_max * Math.abs(next_play - 1);
+                seg_qoe = 0.5 * bitrate_current - bit_max * seg_rebuf - bit_max * Math.abs(next_latency - targetLiveDelay) - bit_min * Math.abs(next_play - 1);
             }
             else {
-                seg_qoe = 0.5 * bitrate_current - bit_max * seg_rebuf - bit_max * Math.abs(next_latency - targetLiveDelay) - bit_max * Math.abs(next_play - 1);
+                seg_qoe = 0.5 * bitrate_current - bit_max * seg_rebuf - bit_max * Math.abs(next_latency - targetLiveDelay) - bit_min * Math.abs(next_play - 1);
             }
 
             seg_qoe -= Math.abs(bitrate_current - cur_bit);
