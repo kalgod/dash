@@ -230,7 +230,7 @@ def gen(segs,trace,bw):
             flu=abs(bitrate-b[i-1])
         else:
             flu=0
-        qoe-=0.5*flu
+        qoe-=1*flu
         f.append(flu)
         # print(i,"{:.2f}\t,{:.2f}\t,{:.2f}\t,{:.2f}\t,{:.2f}\t,{:.2f}\t,{:.2f}\t,{:.2f}\t,{:.2f}".format(mea[i][0],pre[i],real_bw[i],bitrate,1000*rebuf,latency,play,flu,qoe))
     return len(b),np.mean(b),np.sum(r),np.mean(l),np.mean(p),np.mean(f),qoe
