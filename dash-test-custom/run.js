@@ -211,16 +211,16 @@ sleep(waitSeconds * 1000).then(() => {
 
     console.log("Waiting for player to setup.");
 
-    // page.on('console', message => {
-    //   if (message.text().includes('JSHandle@object')) {
-    //     message.args().forEach(async arg => {
-    //       const value = await arg.jsonValue();
-    //       console.dir(value);
-    //     });
-    //   } else {
-    //     console.log(`[${message.type().toUpperCase()}] ${message.text()}`);
-    //   }
-    // });
+    page.on('console', message => {
+      if (message.text().includes('JSHandle@object')) {
+        message.args().forEach(async arg => {
+          const value = await arg.jsonValue();
+          console.dir(value);
+        });
+      } else {
+        console.log(`[${message.type().toUpperCase()}] ${message.text()}`);
+      }
+    });
 
     await page.evaluate(() => {
       return new Promise(resolve => {
@@ -425,7 +425,7 @@ sleep(waitSeconds * 1000).then(() => {
   }
 
   function setNetworkSpeedInMbps(client, kbps) {
-    // console.log(kbps);
+    // console.log("in setnetwork", kbps);
     client.send("Network.emulateNetworkConditions", {
       offline: false,
       latency: 0,

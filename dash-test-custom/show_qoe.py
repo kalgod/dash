@@ -224,8 +224,8 @@ def gen(segs,trace,bw):
         rebuf=r[i]
         latency=l[i]
         play=p[i]
-        if (latency<1.6): qoe=qoe+0.5*bitrate-bit_max*rebuf-bit_max*abs(latency-1.5)-bit_min*abs(play-1)
-        else: qoe=qoe+0.5*bitrate-bit_max*rebuf-bit_max*abs(latency-1.5)-bit_min*abs(play-1)
+        if (latency<1.6): qoe=qoe+0.5*bitrate-bit_max*rebuf-bit_max*abs(latency-1.5)-bit_max*abs(play-1)
+        else: qoe=qoe+0.5*bitrate-bit_max*rebuf-bit_max*abs(latency-1.5)-bit_max*abs(play-1)
         if (i!=0):
             flu=abs(bitrate-b[i-1])
         else:

@@ -70,7 +70,7 @@ function FetchLoader(cfg) {
         // Variables will be used in the callback functions
         const requestStartTime = new Date();
         const initTime = Date.now();
-        console.log("in load ", initTime);
+        // console.log("in load ", initTime);
         const request = httpRequest.request;
 
         const headers = new Headers(); /*jshint ignore:line*/
@@ -250,19 +250,30 @@ function FetchLoader(cfg) {
                     const processResult = function ({ value, done }) { // Bug fix Parse whenever data is coming [value] better than 1ms looking that increase CPU
                         if (done) {
                             if (remaining) {
+                                let total_time, total_bytes;
                                 if (calculationMode !== Constants.ABR_FETCH_THROUGHPUT_CALCULATION_AAST) {
                                     // If there is pending data, call progress so network metrics
                                     // are correctly generated
                                     // Same structure as https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequestEventTarget/
-
+                                    total_time = calculateDownloadedTime(calculationMode, startTimeData, endTimeData, downloadedData, bytesReceived, flag);
+                                    total_bytes = isNaN(totalBytes) ? bytesReceived : totalBytes;
                                     httpRequest.progress({
                                         loaded: bytesReceived,
-                                        total: isNaN(totalBytes) ? bytesReceived : totalBytes,
+                                        total: total_bytes,
                                         lengthComputable: true,
-                                        time: calculateDownloadedTime(calculationMode, startTimeData, endTimeData, downloadedData, bytesReceived, flag),
+                                        time: total_time,
                                         chunks: endTimeData,
                                         stream: true
                                     });
+                                }
+                                let tmp_real_bw = 8 * total_bytes / total_time;
+                                let i = 0;
+                                for (i = 0; i < endTimeData.length; i++) {
+                                    endTimeData[i].idle = 0;
+                                    if (i > 0) {
+                                        endTimeData[i].idle = startTimeData[i].ts - endTimeData[i - 1].ts - 8 * startTimeData[i].bytes / tmp_real_bw;
+                                        // console.log(startTimeData[i].bytes, tmp_real_bw, endTimeData[i]);
+                                    }
                                 }
                                 httpRequest.chunks = endTimeData;
                                 // console.log(httpRequest);
@@ -298,7 +309,7 @@ function FetchLoader(cfg) {
                             if (end === remaining.length) {
                                 data = remaining;
                                 remaining = new Uint8Array();
-                                console.log("end==remain remain!!!!!!!!!!!!!!!!!!!!!!!!!!! ", remaining.length);
+                                // console.log("end==remain remain!!!!!!!!!!!!!!!!!!!!!!!!!!! ", remaining.length);
                             } else {
                                 data = new Uint8Array(remaining.subarray(0, end));
                                 remaining = remaining.subarray(end);
@@ -527,7 +538,8 @@ function FetchLoader(cfg) {
         }
         for (let i = 0; i < datum.length; i++) {
             if (datum[i] && datumE[i]) {
-                console.log("index: ", i, "start ts/size: ", datum[i].ts, "/", datum[i].bytes, "id ", datum[i].id, "end ts/size: ", datumE[i].ts, "/", datumE[i].bytes, "id ", datumE[i].id, "chunk time: ", datumE[i].ts - datum[i].ts);
+                if (i > 0) console.log("index: ", i, "start ts/size: ", datum[i].ts, "/", datum[i].bytes, "id ", datum[i].id, "end ts/size: ", datumE[i].ts, "/", datumE[i].bytes, "id ", datumE[i].id, "chunk time: ", datumE[i].ts - datum[i].ts, "idle time: ", datum[i].ts - datumE[i - 1].ts);
+                else console.log("index: ", i, "start ts/size: ", datum[i].ts, "/", datum[i].bytes, "id ", datum[i].id, "end ts/size: ", datumE[i].ts, "/", datumE[i].bytes, "id ", datumE[i].id, "chunk time: ", datumE[i].ts - datum[i].ts, "idle time: 0");
             }
         }
         return;
@@ -538,7 +550,7 @@ function FetchLoader(cfg) {
             let bw_all = [];
             let datum = startTimeData;
             let datumE = endTimeData;
-            console.log("flag ", flag)
+            // console.log("flag ", flag)
             // if (flag==0) return _calculateDownloadedTimeByMoofParsing(startTimeData, endTimeData, bytesReceived);
             if (flag > 1) {
 
@@ -555,8 +567,8 @@ function FetchLoader(cfg) {
                     fusion_time = Math.max(1, fusion_time);
                     let fusion_bw = 8 * fusion_bytes / fusion_time;
                     bw_all.push({ bw: fusion_bw, size: fusion_bytes });
-                    console.log("testing mode, using flag", fusion_bw, flag);
-                    console.log("fusion bytes time and bw ", fusion_bytes, fusion_time, fusion_bw);
+                    // console.log("testing mode, using flag", fusion_bw, flag);
+                    // console.log("fusion bytes time and bw ", fusion_bytes, fusion_time, fusion_bw);
                 }
             }
 

@@ -14,11 +14,18 @@ alg=str(sys.argv[2])
 pre_path="./trace/raw/"
 
 def run_mm(i,j,k):
-    f=open("./bw_truth/"+i+"/"+j+"/"+alg,'w')
+    truth="./bw_truth/"+i+"/"+j+"/"+alg
+    tmp_truth=truth.split("/")[-1]
+    tmp_truth=truth.replace(tmp_truth,"")
+
+    if (os.path.exists(tmp_truth)==False):
+        os.makedirs(tmp_truth)
+
+    f=open(truth,'w')
     TRACE = './trace/cooked/'+i+"/"+j
 
     comm="node run.js "+i+" "+j+" "+k
-    start_server = 'mm-delay 20 mm-link '+TRACE+" "+TRACE+" "+comm
+    start_server = 'mm-link '+TRACE+" "+TRACE+" "+comm
     
     proc = subprocess.Popen(start_server, shell=True)
     js_time=execjs.eval("Date.now()")
