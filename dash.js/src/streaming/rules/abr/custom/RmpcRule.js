@@ -31,6 +31,8 @@
 var RmpcRule;
 const future_seg = 4;
 const single_chunk = 1 / 30;
+const bw_len = 20;
+const err_len = 20;
 
 function RmpcRuleClass(config) {
     config = config || {};
@@ -40,6 +42,9 @@ function RmpcRuleClass(config) {
     let MetricsModel = factory.getSingletonFactoryByName('MetricsModel');
     let StreamController = factory.getSingletonFactoryByName('StreamController');
     let last_state = [0, 0, 0];
+    let bw_arr = [];
+    let bw_err = [];
+    let future_bw = -1;
     let diff_all = [];
     const dashMetrics = config.dashMetrics;
 
@@ -51,15 +56,24 @@ function RmpcRuleClass(config) {
 
     function cal_future(past_bw) {
         if (!past_bw) return NaN;
-        if (past_bw.length == 1) return past_bw[0];
-        let total_len = past_bw.length;
-        let total_size = 2;
+        let harmonic_bandwidth = 0;
+        let last_bw = past_bw[past_bw.length - 1];
+        bw_arr.push(last_bw);
+        if (bw_arr.length > bw_len) bw_arr.shift();
         let i = 0;
-        let total_bw = 0;
-        for (i = total_len - total_size; i < total_len; i++) {
-            total_bw += past_bw[i];
+        for (i = 0; i < bw_arr.length; i++) harmonic_bandwidth += 1.0 / (bw_arr[i] + 1e-9);
+        harmonic_bandwidth = bw_arr.length / (harmonic_bandwidth + 1e-9);
+
+        let current_err = 0;
+        if (future_bw != -1) {
+            current_err = Math.abs(future_bw - last_bw) / (last_bw + 1e-9);
         }
-        let future_bw = total_bw / (total_size + 1e-9);
+        bw_err.push(current_err);
+        if (bw_err.length > err_len) bw_err.shift();
+
+        let discount = 1.0 / (1.0 + Math.max(...bw_err));
+        future_bw = harmonic_bandwidth * discount;
+        // console.log(bw_arr, bw_err, harmonic_bandwidth, discount, future_bw);
         return future_bw;
     }
 
@@ -172,9 +186,9 @@ function RmpcRuleClass(config) {
                 best_state = [next_buf, next_latency, next_play];
                 best_reward = tmp;
             }
-            // if (seg_rebuf > 0 || next_latency > cur_latency) {
-            //     break;
-            // }
+            if (seg_rebuf > 0 || next_latency > cur_latency) {
+                break;
+            }
             if (tmp > best_reward) {
                 best_bit = i;
                 best_state = [next_buf, next_latency, next_play];
@@ -284,7 +298,7 @@ function RmpcRuleClass(config) {
             let diff = cal_diff(last_state, cur_state);
             diff_all.push(diff[0]);
             let diff_avg = diff_all.reduce((acc, curr) => acc + curr, 0) / diff_all.length;
-            console.log("cal jiange, in rmpc, sum: ", diff_avg, diff_all.length, diff[0], last_state[0], cur_state[0], currentQuality, currentBitrate, throughput);
+            console.log("cal jiange, in rmpc, sum: ", diff_avg, cur_state, currentQuality, currentBitrate, throughput);
             let mpc_start = Date.now();
             let next_q = decision(1, chunks, next_chunks, currentBitrate, currentBufferLevel[1], throughput, latency, targetLiveDelay, playbackRate, next_bit, flag);
             let mpc_end = Date.now();

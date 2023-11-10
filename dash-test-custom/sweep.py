@@ -10,7 +10,7 @@ import time
 # pres=["slide","ewma"]
 # algs=["l2all","rb","lolp"]
 
-meas=["imoof"]
+meas=["fusion"]
 pres=["slide"]
 algs=["rmpc","rb","l2all","lolp"]
 
