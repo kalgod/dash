@@ -65,16 +65,16 @@ function RmpcRuleClass(config) {
         harmonic_bandwidth = bw_arr.length / (harmonic_bandwidth + 1e-9);
 
         let current_err = 0;
-        if (future_bw != -1) {
+        if (future_bw != -1 && future_bw > last_bw) {
             current_err = Math.abs(future_bw - last_bw) / (last_bw + 1e-9);
         }
         bw_err.push(current_err);
         if (bw_err.length > err_len) bw_err.shift();
 
         let discount = 1.0 / (1.0 + Math.max(...bw_err));
-        future_bw = harmonic_bandwidth * discount;
+        future_bw = harmonic_bandwidth;
         // console.log(bw_arr, bw_err, harmonic_bandwidth, discount, future_bw);
-        return future_bw;
+        return harmonic_bandwidth * discount;
     }
 
     function playbackrate_change(currentPlaybackRate, currentLiveLatency, liveDelay, bufferLevel) {
