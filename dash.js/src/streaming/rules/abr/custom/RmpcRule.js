@@ -54,7 +54,7 @@ function RmpcRuleClass(config) {
         return;
     }
 
-    function cal_future(past_bw) {
+    function cal_future(past_bw, diff_arr) {
         if (!past_bw) return NaN;
         let harmonic_bandwidth = 0;
         let last_bw = past_bw[past_bw.length - 1];
@@ -65,16 +65,18 @@ function RmpcRuleClass(config) {
         harmonic_bandwidth = bw_arr.length / (harmonic_bandwidth + 1e-9);
 
         let current_err = 0;
-        if (future_bw != -1 && future_bw > last_bw) {
+        if (future_bw != -1) {
             current_err = Math.abs(future_bw - last_bw) / (last_bw + 1e-9);
         }
         bw_err.push(current_err);
         if (bw_err.length > err_len) bw_err.shift();
 
-        let discount = 1.0 / (1.0 + Math.max(...bw_err));
+        let discount = 1.0 / (1.0 + diff_arr[3]);
+        // let discount = 1.0 / (1.0 + Math.max(...bw_err));
         future_bw = harmonic_bandwidth;
         // console.log(bw_arr, bw_err, harmonic_bandwidth, discount, future_bw);
         return harmonic_bandwidth * discount;
+        // return harmonic_bandwidth;
     }
 
     function playbackrate_change(currentPlaybackRate, currentLiveLatency, liveDelay, bufferLevel) {
@@ -203,9 +205,22 @@ function RmpcRuleClass(config) {
         let i = 0;
         let diff = [];
         for (i = 0; i < last_state.length; i++) {
-            diff.push(100 * Math.abs(cur_state[i] - last_state[i]) / (cur_state[i] + 1e-9));
+            diff.push((last_state[i] - cur_state[i]) / (cur_state[i] + 1e-9));
         }
-        return diff;
+        diff_all.push(diff[0]);
+        if (diff_all.length > err_len) diff_all.shift();
+        let diff_avg = diff_all.reduce((acc, curr) => acc + curr, 0) / diff_all.length;
+        let diff_abs = diff_all.reduce((acc, curr) => acc + Math.abs(curr), 0) / diff_all.length;
+        let diff_var = diff_all.reduce((total, num) => {
+            let ttmp = num - diff_avg;
+            return total + ttmp * ttmp;
+        }, 0) / diff_all.length;
+
+        diff_var = Math.sqrt(diff_var);
+
+        let diff_arr = [diff[0], diff_avg, diff_var, diff_abs];
+        // console.log(diff_arr);
+        return diff_arr;
     }
 
     function getMaxIndex(rulesContext) {
@@ -247,12 +262,6 @@ function RmpcRuleClass(config) {
             const throughputHistory = abrController.getThroughputHistory();
             let past_bw = throughputHistory.getDict()[mediaType]
             // console.log(past_bw, mediaType);
-            let throughput = cal_future(past_bw);
-            // console.log(past_bw, `Throughput ${Math.round(throughput)} kbps`);
-
-            if (isNaN(throughput) || !bufferStateVO) {
-                return switchRequest;
-            }
 
             // QoE parameters
             let bitrateList = mediaInfo.bitrateList;  // [{bandwidth: 200000, width: 640, height: 360}, ...]
@@ -294,11 +303,21 @@ function RmpcRuleClass(config) {
                 last_state = [currentBufferLevel[1], latency, playbackRate];
             }
             let cur_state = [currentBufferLevel[1], latency, playbackRate];
+            let diff_arr = cal_diff(last_state, cur_state);
 
-            let diff = cal_diff(last_state, cur_state);
-            diff_all.push(diff[0]);
-            let diff_avg = diff_all.reduce((acc, curr) => acc + curr, 0) / diff_all.length;
-            console.log("cal jiange, in rmpc, sum: ", diff_avg, cur_state, currentQuality, currentBitrate, throughput);
+            let current_err = 0;
+            if (future_bw != -1 && past_bw) {
+                let last_bw = past_bw[past_bw.length - 1];
+                current_err = 100 * (future_bw - last_bw) / (last_bw + 1e-9);
+            }
+
+            let throughput = cal_future(past_bw, diff_arr);
+            // console.log(past_bw, `Throughput ${Math.round(throughput)} kbps`);
+            if (isNaN(throughput) || !bufferStateVO) {
+                return switchRequest;
+            }
+
+            console.log("cal jiange, in rmpc, sum: ", diff_arr[0], diff_arr[1], diff_arr[2], diff_arr[3], current_err, cur_state, currentQuality, currentBitrate, throughput);
             let mpc_start = Date.now();
             let next_q = decision(1, chunks, next_chunks, currentBitrate, currentBufferLevel[1], throughput, latency, targetLiveDelay, playbackRate, next_bit, flag);
             let mpc_end = Date.now();
