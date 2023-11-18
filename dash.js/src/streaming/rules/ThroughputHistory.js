@@ -63,6 +63,8 @@ function ThroughputHistory(config) {
         ewmaLatencyDict,
         ewmaHalfLife;
 
+    let bufferdict = [];
+
     function setup() {
         ewmaHalfLife = {
             throughputHalfLife: {
@@ -77,6 +79,15 @@ function ThroughputHistory(config) {
 
     function getDict() {
         return throughputDict;
+    }
+
+    function addBuffer(diff) {
+        bufferdict.push(diff);
+        return bufferdict;
+    }
+
+    function getBuffer() {
+        return bufferdict;
     }
 
     function isCachedResponse(mediaType, latencyMs, downloadTimeMs) {
@@ -288,6 +299,8 @@ function ThroughputHistory(config) {
     const instance = {
         push,
         getDict,
+        addBuffer,
+        getBuffer,
         getAverageThroughput,
         getSafeAverageThroughput,
         getAverageLatency,

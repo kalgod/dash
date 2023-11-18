@@ -31,8 +31,9 @@
 var RmpcRule;
 const future_seg = 4;
 const single_chunk = 1 / 30;
-const bw_len = 20;
-const err_len = 20;
+const bw_len = 5;
+const err_len = 5;
+const buffer_err_len = 5;
 
 function RmpcRuleClass(config) {
     config = config || {};
@@ -71,12 +72,13 @@ function RmpcRuleClass(config) {
         bw_err.push(current_err);
         if (bw_err.length > err_len) bw_err.shift();
 
-        let discount = 1.0 / (1.0 + diff_arr[3]);
-        // let discount = 1.0 / (1.0 + Math.max(...bw_err));
+        let discount1 = 1.0 / (1.0 + Math.max(...bw_err));
+        let discount2 = 1.0 / (1.0 + diff_arr[3]);
         future_bw = harmonic_bandwidth;
+        console.log(discount1, discount2)
         // console.log(bw_arr, bw_err, harmonic_bandwidth, discount, future_bw);
-        return harmonic_bandwidth * discount;
-        // return harmonic_bandwidth;
+        // return harmonic_bandwidth * discount;
+        return harmonic_bandwidth * discount2;
     }
 
     function playbackrate_change(currentPlaybackRate, currentLiveLatency, liveDelay, bufferLevel) {
@@ -208,15 +210,22 @@ function RmpcRuleClass(config) {
             diff.push((last_state[i] - cur_state[i]) / (cur_state[i] + 1e-9));
         }
         diff_all.push(diff[0]);
-        if (diff_all.length > err_len) diff_all.shift();
+        if (diff_all.length > buffer_err_len) diff_all.shift();
         let diff_avg = diff_all.reduce((acc, curr) => acc + curr, 0) / diff_all.length;
         let diff_abs = diff_all.reduce((acc, curr) => acc + Math.abs(curr), 0) / diff_all.length;
+
+        // diff_abs = Math.max(...diff_all.map(n => Math.abs(n)));
         let diff_var = diff_all.reduce((total, num) => {
             let ttmp = num - diff_avg;
             return total + ttmp * ttmp;
         }, 0) / diff_all.length;
 
         diff_var = Math.sqrt(diff_var);
+
+        // diff_abs = (Math.random() * 2 - 1) * diff_var + diff_avg;
+        // diff_abs = Math.max(diff_abs, Math.min(...diff_all))
+        // diff_abs = Math.min(diff_abs, Math.max(...diff_all))
+        // diff_abs = Math.abs(diff_abs)
 
         let diff_arr = [diff[0], diff_avg, diff_var, diff_abs];
         // console.log(diff_arr);
@@ -304,12 +313,15 @@ function RmpcRuleClass(config) {
             }
             let cur_state = [currentBufferLevel[1], latency, playbackRate];
             let diff_arr = cal_diff(last_state, cur_state);
+            throughputHistory.addBuffer(diff_arr[0]);
 
             let current_err = 0;
             if (future_bw != -1 && past_bw) {
                 let last_bw = past_bw[past_bw.length - 1];
-                current_err = 100 * (future_bw - last_bw) / (last_bw + 1e-9);
+                current_err = (future_bw - last_bw) / (last_bw + 1e-9);
             }
+
+            let delta = cur_state[0] - last_state[0] + (0.5 * currentBitrate) / future_bw - tmp_sum * 8 / 1024 / past_bw[past_bw.length - 1];
 
             let throughput = cal_future(past_bw, diff_arr);
             // console.log(past_bw, `Throughput ${Math.round(throughput)} kbps`);

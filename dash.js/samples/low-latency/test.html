@@ -59,7 +59,7 @@
             var useCustomPlaybackControl = document.getElementById('use-custom-playback-control').checked;
             var playbackBufferMin = parseFloat(document.getElementById('playback-buffer-min').value, 10);
 
-            let abrval = 'RmpcRule';
+            let abrval = 'abrThroughput';
             setabrStrategy(abrval);
 
             let meaval = 'abrFetchThroughputCalculationFusion';
@@ -507,16 +507,18 @@
                     const throughput = Math.round(player.getAverageThroughput('video', isDynamic));
                     // console.log(player);
                     const throughputhis = player.getThroughputHis().getDict()[e.mediaType]
+                    const buffer_arr = player.getThroughputHis().getBuffer()
 
                     // console.log("player is",player,segmentKey,throughputhis,new Date(e.request.firstByteDate).getTime() / 1000)
 
                     currentMetrics.throughputKbps = throughput;
                     currentMetrics.throughputTimestampMs = Date.now();
+
+                    currentMetrics.throughputhis = -1;
+                    currentMetrics.buffer = -1;
                     if (segmentKey.includes("chunk")) {
                         currentMetrics.throughputhis = throughputhis[throughputhis.length - 1];
-                    }
-                    else {
-                        currentMetrics.throughputhis = -1;
+                        if (buffer_arr.length > 0) currentMetrics.buffer = buffer_arr[buffer_arr.length - 1];
                     }
                     // console.log('-- player.getSafeAverageThroughput(): ' + throughput + 'kbps');
 

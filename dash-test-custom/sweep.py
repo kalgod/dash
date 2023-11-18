@@ -10,9 +10,9 @@ import time
 # pres=["slide","ewma"]
 # algs=["l2all","rb","lolp"]
 
-meas=["fusion"]
+meas=["fusion","imoof"]
 pres=["slide"]
-algs=["rmpc","rb","l2all","lolp"]
+algs=["rmpc","rb"]
 
 for mea in meas:
     for pre in pres:
