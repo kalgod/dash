@@ -78,7 +78,7 @@ function RmpcRuleClass(config) {
         console.log(discount1, discount2)
         // console.log(bw_arr, bw_err, harmonic_bandwidth, discount, future_bw);
         // return harmonic_bandwidth * discount;
-        return harmonic_bandwidth * discount2;
+        return harmonic_bandwidth * discount1;
     }
 
     function playbackrate_change(currentPlaybackRate, currentLiveLatency, liveDelay, bufferLevel) {
