@@ -59,10 +59,10 @@
             var useCustomPlaybackControl = document.getElementById('use-custom-playback-control').checked;
             var playbackBufferMin = parseFloat(document.getElementById('playback-buffer-min').value, 10);
 
-            let abrval = 'abrThroughput';
+            let abrval = 'RmpcRule';
             setabrStrategy(abrval);
 
-            let meaval = 'abrFetchThroughputCalculationIMoofParsing';
+            let meaval = 'abrFetchThroughputCalculationFusion';
             setmeaStrategy(meaval);
 
             let preval = 'slidingWindow';

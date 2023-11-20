@@ -74,11 +74,16 @@ function RmpcRuleClass(config) {
 
         let discount1 = 1.0 / (1.0 + Math.max(...bw_err));
         let discount2 = 1.0 / (1.0 + diff_arr[3]);
-        future_bw = harmonic_bandwidth;
+        let alpha = 0;
+
+        // let discount=Math.min(discount1,discount2);
+        let discount = alpha * discount1 + (1 - alpha) * discount2;
+
+        future_bw = harmonic_bandwidth * discount;
         console.log(discount1, discount2)
         // console.log(bw_arr, bw_err, harmonic_bandwidth, discount, future_bw);
         // return harmonic_bandwidth * discount;
-        return harmonic_bandwidth * discount1;
+        return harmonic_bandwidth * discount;
     }
 
     function playbackrate_change(currentPlaybackRate, currentLiveLatency, liveDelay, bufferLevel) {
@@ -141,10 +146,11 @@ function RmpcRuleClass(config) {
             downtime += Math.min(Math.max(chunks[i].idle / 1000, 0), 33 / 1000);
 
             let tmp_rebuf = Math.max(downtime - cur_buf / cur_play, 0);
+            let tmp_min = Math.min(downtime, cur_buf / cur_play)
             cur_buf = Math.max(cur_buf - cur_play * downtime, 0) + single_chunk;
             cur_buf = Math.min(cur_buf, 1.5);
             rebuf += tmp_rebuf;
-            cur_latency = cur_latency - (cur_play - 1) * downtime + tmp_rebuf;
+            cur_latency = cur_latency - (cur_play - 1) * tmp_min + tmp_rebuf;
             cur_play = playbackrate_change(cur_play, cur_latency, targetLiveDelay, cur_buf);
             if (toshow) console.log(i, tmp_chunks[i], downtime * 1000, cur_buf, tmp_rebuf, cur_latency, cur_play, isdiff);
         }
