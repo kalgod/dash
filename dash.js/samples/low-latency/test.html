@@ -16,6 +16,7 @@
     <script src="./abr/LoLp_WeightSelection.js" class="code"></script>
 
     <script src="../../src/streaming/rules/abr/custom/RmpcRule.js" class="code"></script>
+    <script src="../../src/streaming/rules/abr/custom/StallionRule.js" class="code"></script>
 
     <script class="code">
         var player, targetLatency, maxDrift, catchupPlaybackRate;
@@ -59,7 +60,7 @@
             var useCustomPlaybackControl = document.getElementById('use-custom-playback-control').checked;
             var playbackBufferMin = parseFloat(document.getElementById('playback-buffer-min').value, 10);
 
-            let abrval = 'RmpcRule';
+            let abrval = 'abrThroughput';
             setabrStrategy(abrval);
 
             let meaval = 'abrFetchThroughputCalculationFusion';
@@ -73,6 +74,10 @@
                 usedefaultabr = false;
                 player.addABRCustomRule('qualitySwitchRules', 'RmpcRule', RmpcRule);
             }
+            else if (abrSelect.value == 'StallionRule') {
+                usedefaultabr = false;
+                player.addABRCustomRule('qualitySwitchRules', 'StallionRule', StallionRule);
+            }
             else {
                 usedefaultabr = true;
             }
@@ -85,7 +90,7 @@
 
             // player.addABRCustomRule('qualitySwitchRules', 'RmpcRule', RmpcRule);
 
-            console.log(usedefaultabr, abrSelect.value, meaSelect.value, preSelect.value, targetLatency, maxDrift, catchupPlaybackRate, useCustomPlaybackControl, playbackBufferMin);
+            console.log(usedefaultabr, abrSelect.value, StallionRule, meaSelect.value, preSelect.value, targetLatency, maxDrift, catchupPlaybackRate, useCustomPlaybackControl, playbackBufferMin);
 
             player.updateSettings({
                 debug: {
@@ -187,6 +192,7 @@
         <option value="abrL2A">L2A</option>
         <option value="abrThroughput">Rb</option>
         <option value="RmpcRule">Rmpc</option>
+        <option value="StallionRule">Stallion</option>
     </select>
 
     <select id="meaSelect">

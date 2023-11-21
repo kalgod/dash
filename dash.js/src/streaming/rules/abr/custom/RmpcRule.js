@@ -47,6 +47,7 @@ function RmpcRuleClass(config) {
     let bw_err = [];
     let future_bw = -1;
     let diff_all = [];
+    let diff_arr = [];
     const dashMetrics = config.dashMetrics;
 
     let instance;
@@ -55,7 +56,7 @@ function RmpcRuleClass(config) {
         return;
     }
 
-    function cal_future(past_bw, diff_arr) {
+    function cal_future(past_bw) {
         if (!past_bw) return NaN;
         let harmonic_bandwidth = 0;
         let last_bw = past_bw[past_bw.length - 1];
@@ -83,7 +84,7 @@ function RmpcRuleClass(config) {
         console.log(discount1, discount2)
         // console.log(bw_arr, bw_err, harmonic_bandwidth, discount, future_bw);
         // return harmonic_bandwidth * discount;
-        return harmonic_bandwidth * discount;
+        return harmonic_bandwidth;
     }
 
     function playbackrate_change(currentPlaybackRate, currentLiveLatency, liveDelay, bufferLevel) {
@@ -131,19 +132,29 @@ function RmpcRuleClass(config) {
         return currentPlaybackRate;
     }
 
-    function evolve(cur_buf, cur_latency, targetLiveDelay, cur_play, cur_qual, future_bw, chunks, next_chunks, last_flag, isdiff, toshow) {
+    function evolve(cur_buf, cur_latency, targetLiveDelay, cur_play, cur_qual, future_bw, chunks, next_chunks, last_flag, isdiff, toshow, toadd) {
         let tmp_chunks = next_chunks[cur_qual];
         let i = 0;
         let rebuf = 0;
+        let downtimes = [];
+        // console.log(diff_arr[3]);
+
         for (i = 0; i < tmp_chunks.length; i++) {
-            let downtime = 8 * tmp_chunks[i] / (1024 * future_bw);
+            let tmp = 8 * tmp_chunks[i] / (1024 * future_bw);
             // if (i >= last_flag) downtime += single_chunk;
             // if (cur_latency < cur_buf + 0.66) downtime = single_chunk;
             if (i == 0) {
-                if (isdiff) downtime += 60 / 1000;
-                else downtime += 26 / 1000;
+                if (isdiff) tmp += 60 / 1000;
+                else tmp += 26 / 1000;
             }
-            downtime += Math.min(Math.max(chunks[i].idle / 1000, 0), 33 / 1000);
+            tmp += Math.min(Math.max(chunks[i].idle / 1000, 0), 33 / 1000);
+            downtimes.push(tmp);
+        }
+        let down_sum = downtimes.reduce((a, b) => a + b, 0);
+        for (i = 0; i < tmp_chunks.length; i++) {
+            // console.log(i, diff_arr[1], cur_play, downtimes[i] / down_sum);
+            let downtime = downtimes[i];
+            if (toadd) downtime = downtimes[i] * (1 + diff_arr[3] / 0.3 / down_sum);
 
             let tmp_rebuf = Math.max(downtime - cur_buf / cur_play, 0);
             let tmp_min = Math.min(downtime, cur_buf / cur_play)
@@ -168,7 +179,7 @@ function RmpcRuleClass(config) {
             let bitrate_current = bitlist[i];
             let toshow = false;
             if (cur_seg == 1) toshow = false
-            let res = evolve(cur_buf, cur_latency, targetLiveDelay, cur_play, i, future_bw, chunks, next_chunks, last_flag, bitrate_current != cur_bit, toshow);
+            let res = evolve(cur_buf, cur_latency, targetLiveDelay, cur_play, i, future_bw, chunks, next_chunks, last_flag, bitrate_current != cur_bit, toshow, true);
             let next_buf = res.next_buf;
             let next_latency = res.next_latency;
             let next_play = res.next_play;
@@ -212,15 +223,16 @@ function RmpcRuleClass(config) {
     function cal_diff(last_state, cur_state) {
         let i = 0;
         let diff = [];
+        let idx = 1;
         for (i = 0; i < last_state.length; i++) {
-            diff.push((last_state[i] - cur_state[i]) / (cur_state[i] + 1e-9));
+            diff.push((last_state[i] - cur_state[i]));
         }
-        diff_all.push(diff[0]);
+        diff_all.push(diff[idx]);
         if (diff_all.length > buffer_err_len) diff_all.shift();
         let diff_avg = diff_all.reduce((acc, curr) => acc + curr, 0) / diff_all.length;
         let diff_abs = diff_all.reduce((acc, curr) => acc + Math.abs(curr), 0) / diff_all.length;
+        diff_abs = Math.max(...diff_all.map(n => Math.abs(n)));
 
-        // diff_abs = Math.max(...diff_all.map(n => Math.abs(n)));
         let diff_var = diff_all.reduce((total, num) => {
             let ttmp = num - diff_avg;
             return total + ttmp * ttmp;
@@ -233,7 +245,7 @@ function RmpcRuleClass(config) {
         // diff_abs = Math.min(diff_abs, Math.max(...diff_all))
         // diff_abs = Math.abs(diff_abs)
 
-        let diff_arr = [diff[0], diff_avg, diff_var, diff_abs];
+        diff_arr = [diff[0], diff_avg, diff_var, diff_abs];
         // console.log(diff_arr);
         return diff_arr;
     }
@@ -318,18 +330,40 @@ function RmpcRuleClass(config) {
                 last_state = [currentBufferLevel[1], latency, playbackRate];
             }
             let cur_state = [currentBufferLevel[1], latency, playbackRate];
-            let diff_arr = cal_diff(last_state, cur_state);
+            diff_arr = cal_diff(last_state, cur_state);
             throughputHistory.addBuffer(diff_arr[0]);
 
             let current_err = 0;
+            let last_bw = -1;
             if (future_bw != -1 && past_bw) {
-                let last_bw = past_bw[past_bw.length - 1];
+                last_bw = past_bw[past_bw.length - 1];
                 current_err = (future_bw - last_bw) / (last_bw + 1e-9);
             }
 
             let delta = cur_state[0] - last_state[0] + (0.5 * currentBitrate) / future_bw - tmp_sum * 8 / 1024 / past_bw[past_bw.length - 1];
 
-            let throughput = cal_future(past_bw, diff_arr);
+            // let discount_server = 1;
+            // xhr = new XMLHttpRequest();
+            // REMOTE_SIMPLE_URL = 'http://101.6.41.182:12304'
+            // xhr.open("POST", REMOTE_SIMPLE_URL, false);
+            // xhr.onreadystatechange = function () {
+            //     if (xhr.readyState == 4 && xhr.status == 200) {
+            //         // console.log("GOT RESPONSE:" + xhr.responseText + "---");
+            //         if (xhr.responseText != "REFRESH") {
+            //             discount_server = parseFloat(xhr.responseText);
+            //             console.log("quality here", discount_server);
+            //         } else {
+            //             document.location.reload(true);
+            //         }
+            //     }
+            // };
+            // // console.log(xhr);
+            // data = { 'bw': last_bw, 'error': diff_arr[0] };
+            // console.log(data)
+            // xhr.send(JSON.stringify(data));
+
+            let throughput = cal_future(past_bw);
+            // throughput = throughput * discount_server
             // console.log(past_bw, `Throughput ${Math.round(throughput)} kbps`);
             if (isNaN(throughput) || !bufferStateVO) {
                 return switchRequest;
@@ -341,7 +375,10 @@ function RmpcRuleClass(config) {
             let mpc_end = Date.now();
             console.log("running time/ms: ", mpc_end - mpc_start, next_q);
             switchRequest.quality = next_q.bit;
-            last_state = next_q.state;
+
+            let tmp_state = evolve(currentBufferLevel[1], latency, targetLiveDelay, playbackRate, next_q.bit, throughput, chunks, next_chunks, flag, next_bit[next_q.bit] != currentBitrate, false, false);
+            last_state = [tmp_state.next_buf, tmp_state.next_latency, tmp_state.next_play];
+            console.log(next_q.state, last_state);
             // switchRequest.quality = abrController.getQualityForBitrate(mediaInfo, throughput, latency);
             switchRequest.reason = { throughput: throughput, latency: latency };
             switchRequest.priority = SwitchRequest.PRIORITY.STRONG;

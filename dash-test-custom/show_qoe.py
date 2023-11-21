@@ -142,6 +142,7 @@ def plot_buffer(buf,abs_time,l,trace,bw,buffer_error):
     #outputname="BBA与MPC对比"
     outputname="./results/"+trace+"/"+bw+"/"+alg+"/buffer"
     pre_buffer=(1+np.array(buffer_error))*np.array(buf[:-1])
+    pre_buffer=np.array(buffer_error)+np.array(buf[:-1])
     results_all=[buf[:-1],l[:-1],pre_buffer]
     #outputname="reward"
     plt.rcParams['axes.labelsize'] = 18

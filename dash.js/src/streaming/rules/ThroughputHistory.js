@@ -48,6 +48,9 @@ function ThroughputHistory(config) {
     const THROUGHPUT_DECREASE_SCALE = 1.3;
     const THROUGHPUT_INCREASE_SCALE = 1.3;
 
+    // standard deviation window parameter
+    const STANDARD_DEVIATION_WINDOW = 20;
+
     // EWMA constants
     const EWMA_THROUGHPUT_SLOW_HALF_LIFE_SECONDS = 8;
     const EWMA_THROUGHPUT_FAST_HALF_LIFE_SECONDS = 3;
@@ -61,7 +64,9 @@ function ThroughputHistory(config) {
         latencyDict,
         ewmaThroughputDict,
         ewmaLatencyDict,
-        ewmaHalfLife;
+        ewmaHalfLife,
+        stdDevLatencyHistory = [],
+        stdDevThroughputHistory = [];
 
     let bufferdict = [];
 
@@ -218,6 +223,49 @@ function ThroughputHistory(config) {
             getAverageEwma(isThroughput, mediaType) : getAverageSlidingWindow(isThroughput, mediaType, isDynamic);
     }
 
+    function getSTD(isThroughput, mediaType, isDynamic) {
+        return settings.get().streaming.abr.movingAverageMethod !== Constants.MOVING_AVERAGE_SLIDING_WINDOW ?
+            getAverageEwma(isThroughput, mediaType) : getSTDSlidingWindow(isThroughput, mediaType, isDynamic);
+    }
+
+    function getSTDSlidingWindow(isThroughput, mediaType, isDynamic) {
+        const sampleSize = getSampleSize(isThroughput, mediaType, isDynamic);
+        const dict = isThroughput ? throughputDict : latencyDict;
+        let arr = dict[mediaType];
+
+        if (sampleSize === 0 || !arr || arr.length === 0) {
+            return NaN;
+        }
+
+        var devWindow = (arr.length >= STANDARD_DEVIATION_WINDOW) ? -STANDARD_DEVIATION_WINDOW : -arr.length;
+        arr = arr.slice(devWindow); // still works if sampleSize too large
+        var avg = arr[0];
+        if (arr.length >= 1) {
+            avg = arr.reduce((total, elem) => total + elem) / arr.length - 1;
+        }
+
+        var squareDiffs = arr.map(function (value) {
+            var diff = value - avg;
+            var sqrDiff = diff * diff;
+            return sqrDiff;
+        });
+
+        var avgSquareDiff = squareDiffs.reduce((total, elem) => total + elem) / arr.length;
+
+        var stdDev = Math.sqrt(avgSquareDiff);
+        if (isThroughput) {
+            if (stdDevThroughputHistory.indexOf(stdDev) == -1 && stdDev != 0) {
+                stdDevThroughputHistory.push(stdDev);
+            }
+        } else {
+            if (stdDevLatencyHistory.indexOf(stdDev) == -1 && stdDev != 0) {
+                stdDevLatencyHistory.push(stdDev);
+            }
+        }
+
+        return stdDev
+    }
+
     function getAverageSlidingWindow(isThroughput, mediaType, isDynamic) {
         const sampleSize = getSampleSize(isThroughput, mediaType, isDynamic);
         const dict = isThroughput ? throughputDict : latencyDict;
@@ -227,9 +275,39 @@ function ThroughputHistory(config) {
             return NaN;
         }
 
-        arr = arr.slice(-sampleSize); // still works if sampleSize too large
-        // arr.length >= 1
-        return arr.reduce((total, elem) => total + elem) / arr.length;
+        if (settings.get().streaming.abr.ABRStrategy != 'StallionRule') {
+            arr = arr.slice(-sampleSize); // still works if sampleSize too large
+            // arr.length >= 1
+            return arr.reduce((total, elem) => total + elem) / arr.length;
+        }
+
+        var devWindow = (arr.length >= STANDARD_DEVIATION_WINDOW) ? -STANDARD_DEVIATION_WINDOW : -arr.length;
+        arr = arr.slice(devWindow); // still works if sampleSize too large
+        var avg = arr[0];
+        if (arr.length >= 1) {
+            avg = arr.reduce((total, elem) => total + elem) / arr.length - 1;
+        }
+
+        var squareDiffs = arr.map(function (value) {
+            var diff = value - avg;
+            var sqrDiff = diff * diff;
+            return sqrDiff;
+        });
+
+        var avgSquareDiff = squareDiffs.reduce((total, elem) => total + elem) / arr.length;
+
+        var stdDev = Math.sqrt(avgSquareDiff);
+        if (isThroughput) {
+            if (stdDevThroughputHistory.indexOf(stdDev) == -1 && stdDev != 0) {
+                stdDevThroughputHistory.push(stdDev);
+            }
+        } else {
+            if (stdDevLatencyHistory.indexOf(stdDev) == -1 && stdDev != 0) {
+                stdDevLatencyHistory.push(stdDev);
+            }
+        }
+
+        return avg
     }
 
     function getAverageEwma(isThroughput, mediaType) {
@@ -258,6 +336,10 @@ function ThroughputHistory(config) {
         return getAverage(true, mediaType, isDynamic);
     }
 
+    function getSTDThroughput(mediaType, isDynamic) {
+        return getSTD(true, mediaType, isDynamic);
+    }
+
     function getSafeAverageThroughput(mediaType, isDynamic) {
         let average = getAverageThroughput(mediaType, isDynamic);
         if (!isNaN(average)) {
@@ -268,6 +350,10 @@ function ThroughputHistory(config) {
 
     function getAverageLatency(mediaType) {
         return getAverage(false, mediaType);
+    }
+
+    function getSTDLatency(mediaType) {
+        return getSTD(false, mediaType);
     }
 
     function checkSettingsForMediaType(mediaType) {
@@ -304,6 +390,8 @@ function ThroughputHistory(config) {
         getAverageThroughput,
         getSafeAverageThroughput,
         getAverageLatency,
+        getSTDThroughput,
+        getSTDLatency,
         reset
     };
 

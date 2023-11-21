@@ -358,6 +358,9 @@ sleep(waitSeconds * 1000).then(() => {
     else if (abrval.includes("dyn")) {
       abrreplace = 'abrDynamic';
     }
+    else if (abrval.includes("stallion")) {
+      abrreplace = 'StallionRule';
+    }
     else {
       console.log("wrong abr");
       process.exit(0);
