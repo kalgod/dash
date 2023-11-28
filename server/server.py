@@ -21,6 +21,39 @@ from functools import partial
 import a
 from collections import OrderedDict
 
+import os
+import sys
+import torch
+# import load_trace
+import numpy as np
+# import fixed_env as env
+from Network import ActorNetwork
+from torch.distributions import Categorical
+
+S_INFO = 6  # bit_rate, buffer_size, next_chunk_size, bandwidth_measurement(throughput and time), chunk_til_video_end
+S_LEN = 8  # take how many frames in the past
+A_DIM = 6
+ACTOR_LR_RATE = 0.0001
+CRITIC_LR_RATE = 0.001
+VIDEO_BIT_RATE = [200,600,1000,2500,4000,6000]  # Kbps
+BUFFER_NORM_FACTOR = 2.0
+CHUNK_TIL_VIDEO_END_CAP = 48.0
+M_IN_K = 1000.0
+REBUF_PENALTY = 4.3  # 1 sec rebuffering -> 3 Mbps
+SMOOTH_PENALTY = 1
+DEFAULT_QUALITY = 1  # default video quality without agent
+RANDOM_SEED = 42
+RAND_RANGE = 1000
+LOG_FILE = './test_results/log_sim_rl'
+TEST_TRACES = './data/cooked_test_traces/'
+
+net=ActorNetwork([S_INFO,S_LEN],A_DIM)
+# restore neural net parameters
+net.load_state_dict(torch.load("./actor.pt",map_location=torch.device('cpu')))
+net=net.to(torch.device("cpu"))
+
+state=torch.zeros((S_INFO,S_LEN))
+
 # Define port map: [abr: port]
 abr_port_dict = {
     'pensieve': 12300,
@@ -172,7 +205,6 @@ def handle(ch_index,state):
         discount = disc_median
     return ch_index,discount
 
-
 def make_request_handler(abr_model, input_dict):
     class Request_Handler(BaseHTTPRequestHandler):
         def __init__(self, *args, **kwargs):
@@ -182,24 +214,41 @@ def make_request_handler(abr_model, input_dict):
             BaseHTTPRequestHandler.__init__(self, *args, **kwargs)
 
         def do_POST(self):
+            start_time=time.time()
             global m_idx
-            global m_state
+            global m_state,state
             content_length = int(self.headers['Content-Length'])
             post_data = json.loads(self.rfile.read(content_length))
-            cur_bw=float(post_data['bw'])
-            cur_state=int(1000*100*float(post_data['error']))
+            last_abr=int(post_data['last_abr'])
+            if (last_abr==1):
+                state=torch.zeros((S_INFO,S_LEN))
+            buffer=float(post_data['buffer'])
+            last_bit=int(post_data['last_bit'])
+            bw=float(post_data['bw'])
+            downtime=float(post_data['downtime'])
+            next_chunk=np.array(VIDEO_BIT_RATE)*0.5
+            cur_chunk=float(post_data['cur_chunk'])
 
-            if (cur_bw==-1):
-                m_idx=-1
-                m_state=[]
-            m_state.append(cur_state)
-            discount=0.9
-            tmp_idx,discount=handle(m_idx,m_state)
-            m_idx=tmp_idx
+            state = torch.roll(state,-1,dims=-1)
 
-            print(len(m_state),post_data,discount)
+            # this should be S_INFO number of terms
+            state[0, -1] = VIDEO_BIT_RATE[last_bit] / float(np.max(VIDEO_BIT_RATE))  # last quality
+            state[1, -1] = buffer / BUFFER_NORM_FACTOR  # 10 sec
+            state[2, -1] = bw/8000  # kilo byte / ms
+            state[3, -1] = float(downtime)/ BUFFER_NORM_FACTOR  # 10 sec
+            state[4, :A_DIM] = torch.tensor(next_chunk)/8 / M_IN_K  # mega byte
+            state[5, -1] = float(cur_chunk)/ M_IN_K / M_IN_K
 
-            send_data=str(float(discount))
+            with torch.no_grad():
+                probability=net.forward(state.unsqueeze(0))
+                bit=torch.argmax(probability).item()
+
+            end_time=time.time()
+            print(last_bit,buffer,bw,bit,end_time-start_time)
+
+            
+
+            send_data=str(int(bit))
 
             self.send_response(200)
             self.send_header('Content-Type', 'text/plain')
@@ -255,9 +304,9 @@ def run(ABR,server_class=HTTPServer, port=8333):
 
     # interface to abr_rl server
     handler_class = make_request_handler(abr_model=abr, input_dict=input_dict)
-    server_address = ("101.6.41.182", port)
+    server_address = ('localhost', port)
     httpd = server_class(server_address, handler_class)
-    print('Listening on port ' + str(port))
+    print('Listening on port ' + str(server_address))
     httpd.serve_forever()
 
 def main():

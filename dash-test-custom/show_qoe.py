@@ -18,7 +18,7 @@ import matplotlib
 
 def plot_qoe(mea,pre,real,bit,trace,bw):
     TEST_LOG_FOLDER = './'
-    SCHEMES=['mea','pre','real','bit']
+    SCHEMES=['BW-M','BW-P','BW-R','Bitrate']
     labels = SCHEMES
     #outputname="BBA与MPC对比"
     outputname="./results/"+trace+"/"+bw+"/"+alg+"/qoe"
@@ -58,8 +58,7 @@ def plot_qoe(mea,pre,real,bit,trace,bw):
     for (scheme, label, marker, color, line) in zip(results_all, labels, markers, colors, lines):
         ax.plot(xs, scheme, color=color, lw=1.3, label=label)
 
-    ax.legend(framealpha=1, loc='best',
-                frameon=False, fontsize=14)
+    ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1), ncol=2,fontsize=15)
 
     #plt.xlim(-2., 1.1)
     # plt.xticks([0., 5., 10., 15., 20., 25., 30., 35., 40.])
@@ -67,18 +66,18 @@ def plot_qoe(mea,pre,real,bit,trace,bw):
     ax.spines['left'].set_linewidth(1.5)
     ax.spines['right'].set_linewidth(1.5)
     ax.spines['top'].set_linewidth(1.5)
-    #plt.ylim(-0.05, 1.02)
+    # plt.ylim(0, 2500)
     #plt.yticks([0., 0.25, 0.5, 0.75, 1.0])
-    plt.ylabel('BW')
+    plt.ylabel('Bandwidth(Kbps)')
     plt.grid()
-    plt.xlabel('Time')
+    plt.xlabel('Segment')
     path_tmp=outputname+".pdf"
     savefig(path_tmp)
     plt.close()
 
 def plot_error(mea,pre,buffer_error,chunk_error):
     TEST_LOG_FOLDER = './'
-    SCHEMES=['band','buffer','chunk']
+    SCHEMES=['Bandwidth','Buffer','Segment Size']
     labels = SCHEMES
     #outputname="BBA与MPC对比"
     outputname="./results/"+trace+"/"+bw+"/"+alg+"/error"
@@ -128,21 +127,21 @@ def plot_error(mea,pre,buffer_error,chunk_error):
     ax.spines['top'].set_linewidth(1.5)
     plt.ylim(-1.0, 1.0)
     #plt.yticks([0., 0.25, 0.5, 0.75, 1.0])
-    plt.ylabel('BW')
+    plt.ylabel('Relative Error')
     plt.grid()
-    plt.xlabel('Time')
+    plt.xlabel('Segment')
     path_tmp=outputname+".pdf"
     savefig(path_tmp)
     plt.close()
 
 def plot_buffer(buf,abs_time,l,trace,bw,buffer_error):
     TEST_LOG_FOLDER = './'
-    SCHEMES=['buffer','latency','pre']
+    SCHEMES=['Buffer-Real','Latency','Buffer-Predict']
     labels = SCHEMES
     #outputname="BBA与MPC对比"
     outputname="./results/"+trace+"/"+bw+"/"+alg+"/buffer"
     pre_buffer=(1+np.array(buffer_error))*np.array(buf[:-1])
-    pre_buffer=np.array(buffer_error)+np.array(buf[:-1])
+    # pre_buffer=np.array(buffer_error)+np.array(buf[:-1])
     results_all=[buf[:-1],l[:-1],pre_buffer]
     #outputname="reward"
     plt.rcParams['axes.labelsize'] = 18
@@ -182,9 +181,9 @@ def plot_buffer(buf,abs_time,l,trace,bw,buffer_error):
     ax.spines['top'].set_linewidth(1.5)
     #plt.ylim(-0.05, 1.02)
     #plt.yticks([0., 0.25, 0.5, 0.75, 1.0])
-    plt.ylabel('BW')
-    plt.grid(linestyle='--')
-    plt.xlabel('Time')
+    plt.ylabel('Buffer & Latency/s')
+    plt.grid()
+    plt.xlabel('Segment')
     path_tmp=outputname+".pdf"
     savefig(path_tmp)
     plt.close()
@@ -268,6 +267,11 @@ def gen(segs,trace,bw):
     buf=[]
     abs_time=[]
     qoe=0
+    bitrate_qoe=0
+    rebuf_pen=0
+    lat_pen=0
+    play_pen=0
+    switch_pen=0
     key_l=list(segs.keys())
     for i in range(len(key_l)):
         key=key_l[i]
@@ -300,16 +304,22 @@ def gen(segs,trace,bw):
         rebuf=r[i]
         latency=l[i]
         play=p[i]
-        if (latency<1.53): qoe=qoe+0.5*bitrate-bit_max*rebuf-0.05*bit_min*latency-bit_min*abs(play-1)
-        else: qoe=qoe+0.5*bitrate-bit_max*rebuf-0.1*bit_max*latency-bit_min*abs(play-1)
-        if (i!=0):
-            flu=abs(bitrate-b[i-1])
+        bitrate_qoe+=0.5*bitrate
+        rebuf_pen+=bit_max*rebuf
+        play_pen+=bit_min*abs(play-1)
+        limbo=1.6
+        if (trace=="all_0"): 
+            lat_pen+=bit_max*abs(latency-1.5)
         else:
-            flu=0
-        qoe-=1*flu
+            if (latency<limbo): lat_pen+=0.05*bit_min*latency
+            else: lat_pen+=0.1*bit_max*latency
+        if (i!=0): flu=abs(bitrate-b[i-1])
+        else: flu=0
+        switch_pen+=0.02*flu
         f.append(flu)
         # print(i,"{:.2f}\t,{:.2f}\t,{:.2f}\t,{:.2f}\t,{:.2f}\t,{:.2f}\t,{:.2f}\t,{:.2f}\t,{:.2f}".format(mea[i][0],pre[i],real_bw[i],bitrate,1000*rebuf,latency,play,flu,qoe))
-    return len(b),np.mean(b),np.sum(r),np.mean(l),np.mean(p),np.mean(f),qoe,np.mean(abs(np.array(buffer_error)))
+    qoe=bitrate_qoe-rebuf_pen-lat_pen-play_pen-switch_pen
+    return len(b),np.mean(b)/1000.0,np.sum(r)/60*100,np.mean(l),np.mean(p),np.mean(f)/1000.0,qoe,bitrate_qoe,rebuf_pen,lat_pen,play_pen,switch_pen,np.mean(abs(np.array(buffer_error)))
 
 if (mode==0):
     traces=TRACE
@@ -319,6 +329,7 @@ for trace in traces:
     bws.sort()
     if (mode==0):
         bws=range(total_trace)
+        # bws=[40]
     b=[]
     r=[]
     l=[]
@@ -326,13 +337,20 @@ for trace in traces:
     flu=[]
     qoe=[]
     buffer=[]
+
+    b_qoe=[]
+    r_pen=[]
+    l_pen=[]
+    p_pen=[]
+    flu_pen=[]
+
     for bw in tqdm.tqdm(bws):
         bw=str(bw)
         trace_name=pre_path+trace+"/"+str(bw)+"/"+alg+"/"
         f=open(trace_name+"metrics-by-download.json","r")
         segs=json.load(f)
         f.close()
-        len1,b1,r1,l1,p1,f1,qoe1,buffer1=gen(segs,trace,bw)
+        len1,b1,r1,l1,p1,f1,qoe1,bitrate_qoe1,rebuf_pen1,lat_pen1,play_pen1,switch_pen1,buffer1=gen(segs,trace,bw)
         b.append(b1)
         r.append(r1)
         l.append(l1)
@@ -340,6 +358,13 @@ for trace in traces:
         flu.append(f1)
         qoe.append(qoe1)
         buffer.append(buffer1)
+
+        b_qoe.append(bitrate_qoe1)
+        r_pen.append(rebuf_pen1)
+        l_pen.append(lat_pen1)
+        p_pen.append(play_pen1)
+        flu_pen.append(switch_pen1)
         print(trace,bw,"{:.2f}\t,{:.2f}\t,{:.2f}\t,{:.2f}\t,{:.2f}\t,{:.2f}\t,{:.2f},{:.2f}".format(len1,b1,r1,l1,p1,f1,qoe1,buffer1))
-    print("done for",trace,"b,r,l,p,f,qoe: {:.4f}\t,{:.4f}\t,{:.4f}\t,{:.4f}\t,{:.4f}\t,{:.4f},{:.4f} \n".format(np.mean(b),np.mean(r),np.mean(l),np.mean(p),np.mean(flu),np.mean(qoe),np.mean(buffer)))
+    print("done for",trace,"b,r,l,p,f,qoe: bit: {:.4f}\t,+{:.4f}\t,-{:.4f}\t,rebuf: {:.4f}\t,+{:.4f}\t,-{:.4f}\t,latency: {:.4f}\t,+{:.4f}\t,-{:.4f}\t,play: {:.4f}\t,+{:.4f}\t,-{:.4f}\t,switch: {:.4f}\t,+{:.4f}\t,-{:.4f}\t,qoe: {:.4f}\t,+{:.4f}\t,-{:.4f}\t,{:.4f}\t,{:.4f}\t,{:.4f}\t,{:.4f}\t,{:.4f}\t,{:.4f} \n".format(
+        np.mean(b),np.max(b)-np.mean(b),np.min(b)-np.mean(b),np.mean(r),np.max(r)-np.mean(r),np.min(r)-np.mean(r),np.mean(l),np.max(l)-np.mean(l),np.min(l)-np.mean(l),np.mean(p),np.max(p)-np.mean(p),np.min(p)-np.mean(p),np.mean(flu),np.max(flu)-np.mean(flu),np.min(flu)-np.mean(flu),np.mean(qoe),np.max(qoe)-np.mean(qoe),np.min(qoe)-np.mean(qoe),np.mean(b_qoe),np.mean(r_pen),np.mean(l_pen),np.mean(p_pen),np.mean(flu_pen),np.mean(buffer)))
 print("all done")

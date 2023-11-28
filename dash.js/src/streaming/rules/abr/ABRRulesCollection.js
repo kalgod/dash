@@ -39,6 +39,12 @@ import LoLPRule from './lolp/LoLpRule.js';
 import FactoryMaker from '../../../core/FactoryMaker';
 import SwitchRequest from '../SwitchRequest';
 import Constants from '../../constants/Constants';
+// const fs = require('fs');
+// console.log(fs)
+import * as ort from 'onnxruntime-web';
+
+
+// console.log(window.location.pathname, pensieveSession);
 
 const QUALITY_SWITCH_RULES = 'qualitySwitchRules';
 const ABANDON_FRAGMENT_RULES = 'abandonFragmentRules';
@@ -137,7 +143,8 @@ function ABRRulesCollection(config) {
         customRules.forEach(function (rule) {
             if (rule.type === QUALITY_SWITCH_RULES) {
                 qualitySwitchRules.push(rule.rule(context).create({
-                    dashMetrics: dashMetrics
+                    dashMetrics: dashMetrics,
+                    ort: ort,
                 }));
             }
 

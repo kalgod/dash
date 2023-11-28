@@ -16,6 +16,8 @@
     <script src="./abr/LoLp_WeightSelection.js" class="code"></script>
 
     <script src="../../src/streaming/rules/abr/custom/RmpcRule.js" class="code"></script>
+    <script src="../../src/streaming/rules/abr/custom/SmpcRule.js" class="code"></script>
+    <script src="../../src/streaming/rules/abr/custom/PensieveRule.js" class="code"></script>
     <script src="../../src/streaming/rules/abr/custom/StallionRule.js" class="code"></script>
 
     <script class="code">
@@ -60,7 +62,7 @@
             var useCustomPlaybackControl = document.getElementById('use-custom-playback-control').checked;
             var playbackBufferMin = parseFloat(document.getElementById('playback-buffer-min').value, 10);
 
-            let abrval = 'abrThroughput';
+            let abrval = 'RmpcRule';
             setabrStrategy(abrval);
 
             let meaval = 'abrFetchThroughputCalculationFusion';
@@ -73,6 +75,14 @@
             if (abrSelect.value == 'RmpcRule') {
                 usedefaultabr = false;
                 player.addABRCustomRule('qualitySwitchRules', 'RmpcRule', RmpcRule);
+            }
+            else if (abrSelect.value == 'SmpcRule') {
+                usedefaultabr = false;
+                player.addABRCustomRule('qualitySwitchRules', 'SmpcRule', SmpcRule);
+            }
+            else if (abrSelect.value == 'PensieveRule') {
+                usedefaultabr = false;
+                player.addABRCustomRule('qualitySwitchRules', 'PensieveRule', PensieveRule);
             }
             else if (abrSelect.value == 'StallionRule') {
                 usedefaultabr = false;
@@ -192,6 +202,8 @@
         <option value="abrL2A">L2A</option>
         <option value="abrThroughput">Rb</option>
         <option value="RmpcRule">Rmpc</option>
+        <option value="SmpcRule">Smpc</option>
+        <option value="PensieveRule">Pensieve</option>
         <option value="StallionRule">Stallion</option>
     </select>
 

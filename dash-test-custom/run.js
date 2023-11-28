@@ -6,7 +6,7 @@ const stats = require("./stats");
 // const CHROME_PATH = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 const CHROME_PATH = "/opt/google/chrome/chrome";
 
-const { QoeEvaluator, QoeInfo } = require("../dash.js-3.2.0/samples/low-latency/abr/LoLp_QoEEvaluation.js");
+const { QoeEvaluator, QoeInfo } = require("./LoLp_QoEEvaluation.js");
 
 // custom
 const pre_path = "./trace/raw/"
@@ -351,6 +351,12 @@ sleep(waitSeconds * 1000).then(() => {
     }
     else if (abrval.includes("rmpc")) {
       abrreplace = 'RmpcRule';
+    }
+    else if (abrval.includes("smpc")) {
+      abrreplace = 'SmpcRule';
+    }
+    else if (abrval.includes("pensieve")) {
+      abrreplace = 'PensieveRule';
     }
     else if (abrval.includes("bola")) {
       abrreplace = 'abrBola';

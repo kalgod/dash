@@ -3,103 +3,226 @@ import os
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import plot, savefig
 import matplotlib
-import scipy.stats
 from const import *
+import tqdm
+import json
+import sys
+# import scipy.stats
+# from const import *
 
-debug=["116",'208','241','680','30206','7015',"11061",'11880','10968','10062','10256','10385','10796','12496','12454','19062','30995','14384']
+lines = ['-', '--', '-.', ':', '--', '-', '-.', ':', '--', '-']
+#colors = ['red', 'blue', 'orange', 'green', 'black']
+def rgb_to_hex(rr, gg, bb):
+    rgb = (rr, gg, bb)
+    return '#%02x%02x%02x' % rgb
+colors = [rgb_to_hex(47, 103, 223), rgb_to_hex(239, 117, 38), rgb_to_hex(
+    121, 90, 158), rgb_to_hex(68, 166, 69), rgb_to_hex(34, 34, 34), rgb_to_hex(237, 65, 29), 
+    rgb_to_hex(102, 49, 160), rgb_to_hex(255, 192, 0)]
+markers = ['o','>','v','^','*','<','s','p','*','h','H','D','d','1']
 
-def draw(results_all):
-    SCHEMES = ['bw_p', 'bw_r']
-    labels = SCHEMES
-    # draw cdfs
-    plt.rcParams['axes.labelsize'] = 18
-    font = {'size': 18}
-    matplotlib.rc('font', **font)
-    #matplotlib.rc('text', usetex=True)
-    fig, ax = plt.subplots(figsize=(5, 3))
-    plt.subplots_adjust(left=0.21, bottom=0.22, right=0.94, top=0.96)
+pre_path="./results/"
 
-    lines = ['-', '--', '-.', ':', '--', '-', '-.', ':', '--', '-']
-    #colors = ['red', 'blue', 'orange', 'green', 'black']
+def gen_bw(segs):
+    mea=[]
+    pre=[]
+    buffer=[]
+    chunksize=[]
+    key_l=list(segs.keys())
+    for i in range(len(key_l)):
+        key=key_l[i]
+        if ("chunk" not in key): continue
+        seg=segs[key]
+        
+        cur_mea=float(seg['throughputhis'])
+        cur_pre=float(seg['throughputKbps'])
+        cur_buffer=float(seg['buffer'])
+        start=float(seg['requestInfo']['requestStartDate'])
+        end=float(seg['requestInfo']['requestEndDate'])
+        cur_chunksize=float(seg['requestInfo']['bytesLoaded'])
+        # print(i,key,len(key_l),float(seg['requestInfo']['bytesTotal']),cur_mea,cur_pre)
+        mea.append([cur_mea,start,end])
+        pre.append(cur_pre)
+        buffer.append(cur_buffer)
+        chunksize.append(cur_chunksize)
+    return mea,pre,buffer,chunksize
 
-    def rgb_to_hex(rr, gg, bb):
-        rgb = (rr, gg, bb)
-        return '#%02x%02x%02x' % rgb
+def gen(segs,trace,bw):
+    bit_max=6000
+    bit_min=200
+    mea,pre,buffer_error,real_chunk=gen_bw(segs)
+    buffer_error=buffer_error[1:]
+    b=[]
+    r=[]
+    l=[]
+    p=[]
+    f=[]
+    buf=[]
+    abs_time=[]
+    qoe=0
+    bitrate_qoe=0
+    rebuf_pen=0
+    lat_pen=0
+    play_pen=0
+    switch_pen=0
+    key_l=list(segs.keys())
+    for i in range(len(key_l)):
+        key=key_l[i]
+        if ("chunk" not in key): continue
+        seg=segs[key]
+        bitrate=float(seg['segmentBitrateKbps'])
+        rebuf=float(seg['segmentStallDurationMs'])/1000.0
+        latency=float(seg['currentLatency'])
+        play=float(seg['playbackSpeed'])
+        buffer=float(seg['currentBufferLength'])
+        abs_t=float(seg['currentTimeRelative'])
+        
+        b.append(bitrate)
+        r.append(rebuf)
+        l.append(latency)
+        p.append(play)
+        buf.append(buffer)
+        abs_time.append(abs_t)
 
-    # colors = [rgb_to_hex(237, 65, 29), rgb_to_hex(102, 49, 160), rgb_to_hex(
-    #     255, 192, 0), rgb_to_hex(237, 65, 29), rgb_to_hex(0, 212, 97)]
-    colors = [rgb_to_hex(47, 103, 223), rgb_to_hex(239, 117, 38), rgb_to_hex(
-        121, 90, 158), rgb_to_hex(68, 166, 69), rgb_to_hex(34, 34, 34), rgb_to_hex(237, 65, 29), 
-        rgb_to_hex(102, 49, 160), rgb_to_hex(255, 192, 0)]
-    markers = ['o','>','v','^','*','<','s','p','*','h','H','D','d','1']
+    mea=np.array(mea)[:,0]
+    pre.insert(0,mea[0])
+    pre=pre[:-1]
+    chunk_error=(0.5*np.array(b)*1024/8-np.array(real_chunk))/(np.array(real_chunk)+1e-9)
 
-    for (scheme, label, marker, color, line) in zip(results_all, labels, markers, colors, lines):
-        xs=[]
-        for i in range (total_len): xs.append(0.25*i)
-        ax.plot(xs, scheme, color=color, lw=1.3, 
-            markevery = 1250, markersize = 12, marker = marker, markerfacecolor='white',
-            label=label)
+    for i in range (len(b)):
+        bitrate=b[i]
+        rebuf=r[i]
+        latency=l[i]
+        play=p[i]
+        bitrate_qoe+=0.5*bitrate
+        rebuf_pen+=bit_max*rebuf
+        play_pen+=bit_min*abs(play-1)
+        limbo=1.6
+        if (trace=="all_0"): 
+            lat_pen+=bit_max*abs(latency-1.5)
+        else:
+            if (latency<limbo): lat_pen+=0.05*bit_min*latency
+            else: lat_pen+=0.1*bit_max*latency
+        if (i!=0): flu=abs(bitrate-b[i-1])
+        else: flu=0
+        switch_pen+=0.02*flu
+        f.append(flu)
+        # print(i,"{:.2f}\t,{:.2f}\t,{:.2f}\t,{:.2f}\t,{:.2f}\t,{:.2f}\t,{:.2f}\t,{:.2f}\t,{:.2f}".format(mea[i][0],pre[i],real_bw[i],bitrate,1000*rebuf,latency,play,flu,qoe))
+    qoe=bitrate_qoe-rebuf_pen-lat_pen-play_pen-switch_pen
+    return len(b),np.mean(b)/1000.0,np.sum(r)/60*100,np.mean(l),np.mean(p),np.mean(f)/1000.0,qoe,bitrate_qoe,rebuf_pen,lat_pen,play_pen,switch_pen,np.mean(abs(np.array(buffer_error)))
 
-    ax.legend(framealpha=1, loc='upper left',
-                frameon=False, fontsize=14)
+def gen_data(dataset,labels,scenes,algs):
+    avg=np.zeros((len(labels),len(scenes)))
+    error=np.zeros((len(labels),2,len(scenes)))
 
-    #plt.xlim(-2., 1.1)
-    # plt.xticks([0., 5., 10., 15., 20., 25., 30., 35., 40.])
-    ax.spines['bottom'].set_linewidth(1.5)
-    ax.spines['left'].set_linewidth(1.5)
-    ax.spines['right'].set_linewidth(1.5)
-    ax.spines['top'].set_linewidth(1.5)
-    #plt.ylim(-0.05, 1.02)
-    #plt.yticks([0., 0.25, 0.5, 0.75, 1.0])
-    plt.ylabel('BW')
-    plt.grid(linestyle='--')
-    plt.xlabel('Time')
-    path_tmp="./bw/bw_figs/"+TRACE+"/"+test_log_file+".pdf"
-    savefig(path_tmp)
-    plt.close()
+    for i in range(len(algs)):
+        alg=algs[i]
+        bws=range(total_trace)
+        b=[]
+        r=[]
+        l=[]
+        p=[]
+        flu=[]
+        qoe=[]
+        buffer=[]
 
-TEST_LOG_FOLDER = './bw/bw_log/'+TRACE+"/"
-if TRACE=="test_0":
-    TEST_LOG_FOLDER1 = './trace/raw/all_0/'
-elif TRACE=="test_1":
-    TEST_LOG_FOLDER1 = './trace/raw/all_1/'
-else:
-    TEST_LOG_FOLDER1 = './trace/raw/'+TRACE+"/"
-# TEST_LOG_FOLDER = './bw_test/'
-# TEST_LOG_FOLDER1 = './traces/'
-test_log_files = os.listdir(TEST_LOG_FOLDER)
-test_log_files.sort()
-res_all=[]
-for i in range(len(test_log_files)):
-    test_log_file=test_log_files[i]
-    if (".npy" in test_log_file): continue
-    bw_p=[]
-    bw_r=[]
-    with open(TEST_LOG_FOLDER + test_log_file, 'r') as f:
-        for line in f:
-            bw_p.append(float(line))
-    with open(TEST_LOG_FOLDER1 + test_log_file, 'r') as f:
-        for line in f:
-            parse = line.split()
-            bw_r.append(float(parse[1]))
+        b_qoe=[]
+        r_pen=[]
+        l_pen=[]
+        p_pen=[]
+        flu_pen=[]
 
-    total_len=min(len(bw_p),len(bw_r))
-    bw_p=np.array(bw_p[:total_len])
-    bw_r=np.array(bw_r[:total_len])
-    if (total_len==0): continue
+        for bw in bws:
+            bw=str(bw)
+            trace_name=pre_path+dataset+"/"+str(bw)+"/"+alg+"/"
+            f=open(trace_name+"metrics-by-download.json","r")
+            segs=json.load(f)
+            f.close()
+            len1,b1,r1,l1,p1,f1,qoe1,bitrate_qoe1,rebuf_pen1,lat_pen1,play_pen1,switch_pen1,buffer1=gen(segs,dataset,bw)
+            b.append(b1)
+            r.append(r1)
+            l.append(l1)
+            p.append(p1)
+            flu.append(f1)
+            qoe.append(qoe1)
+            buffer.append(buffer1)
 
-    # if (test_log_file in debug):
-    #     for j in range (len(bw_p)):
-    #         print(j,bw_p[j],bw_r[j],abs(bw_p[j]-bw_r[j])/(bw_r[j]+1e-9))
-    # if (test_log_file=="101"):
-    #     print(bw_p[117],bw_r[117],len(bw_r),len(bw_r))
-    res=np.mean(abs(bw_p-bw_r)/(bw_r+1e-9))
-    res_all.append(res)
-    print(i,test_log_file,total_len,res,bw_p[:3],bw_r[:3])
+            b_qoe.append(bitrate_qoe1)
+            r_pen.append(rebuf_pen1)
+            l_pen.append(lat_pen1)
+            p_pen.append(play_pen1)
+            flu_pen.append(switch_pen1)
+        avg[i][0]=np.mean(qoe)
+        error[i][0][0]=np.mean(qoe)-np.min(qoe)
+        error[i][1][0]=np.max(qoe)-np.mean(qoe)
 
-    results_all=[]
-    results_all.append(bw_p)
-    results_all.append(bw_r)
-    if (test_log_file in debug): draw(results_all)
+        avg[i][1]=np.mean(b)
+        error[i][0][1]=np.mean(b)-np.min(b)
+        error[i][1][1]=np.max(b)-np.mean(b)
+
+        avg[i][2]=np.mean(r)
+        error[i][0][2]=np.mean(r)-np.min(r)
+        error[i][1][2]=np.max(r)-np.mean(r)
+
+        avg[i][3]=np.mean(l)
+        error[i][0][3]=np.mean(l)-np.min(l)
+        error[i][1][3]=np.max(l)-np.mean(l)
+
+        avg[i][4]=np.mean(p)
+        error[i][0][4]=np.mean(p)-np.min(p)
+        error[i][1][4]=np.max(p)-np.mean(p)
+
+        avg[i][5]=np.mean(flu)
+        error[i][0][5]=np.mean(flu)-np.min(flu)
+        error[i][1][5]=np.max(flu)-np.mean(flu)
+
+    print(dataset,avg[:,0])
+    qoe_min=np.min(avg[:,0])
+    avg[:,0]/=qoe_min
+    error[:,:,0]/=qoe_min
+    print(dataset,avg[:,0],avg[0,0]-avg[2,0],"\n")
+    return avg,error
+        
+
+def plot_bar(name,avg,error,labels,scenes):
+    plt.rc('axes', axisbelow=True)
+    fig = plt.figure(figsize=(10,3), constrained_layout=True)
+    axs = fig.subplots(1, 1)
+    # labels=["Fusion","Fleet","Moof+","Moof","AAST","Seg","Default"]
+    width=0.3
+    x = np.array([1.2*width*len(labels) * i for i in range(len(scenes))])
     
-print("Summary: ",len(res_all),np.mean(res_all),np.std(res_all),np.max(res_all),np.min(res_all))
+    for i in range (len(labels)):
+        axs.bar(x +(i-int(len(labels)/2)) * width, avg[i], width, error_kw={'lw': 1, 'capsize': 3},
+            yerr=[error[i][0],error[i][1]], label=labels[i], alpha=0.5, lw=2)
+        
+    box = axs.get_position()
+    axs.set_position([box.x0, box.y0, box.width * 1, box.height * 0.80])
+    # plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.4), ncol=len(labels),fontsize=15)
+
+    axs.set_xticks(x)
+    axs.set_ylabel('Normalized Value', fontsize=15)
+
+    plt.tick_params(labelsize=15)
+    plt.grid()
+    plt.ylim(0.0, 4.5)
+    plt.yticks([0, 1, 2, 3, 4])
+    # plt.tight_layout()
+    axs.set_xticklabels(scenes)
+    # for i in axs.get_xticklabels()[:]:
+    #    i.set_rotation(5)
+    #    i.set_horizontalalignment('right')
+    plt.savefig("./figs/"+name+".pdf")
+    print("Done")
+
+def main():
+    labels=["AAR","Pensieve","LoL+","L2ALL","STALLION","Dynamic","RB"]
+    scenes=["QoE","Bitrates","Rebuffer","Latency","Speed","Switches"]
+    algs=["fusion-slide-rmpc","fusion-slide-pensieve","fusion-slide-lolp","fusion-slide-l2all","fusion-slide-stallion","fusion-slide-dyn","fusion-slide-rb"]
+    # algs=["fleet-slide-smpc","fleet-slide-pensieve","fleet-slide-lolp","fleet-slide-l2all","fleet-slide-stallion","fleet-slide-dyn","fleet-slide-rb"]
+    datasets=TRACE
+    for i in range (len(datasets)):
+        dataset=datasets[i]
+        avg,error=gen_data(dataset,labels,scenes,algs)
+        # plot_bar("qoe_"+str(dataset),avg,error,labels,scenes)
+
+main()

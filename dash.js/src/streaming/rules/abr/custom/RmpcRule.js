@@ -29,13 +29,13 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 var RmpcRule;
-const future_seg = 4;
-const single_chunk = 1 / 30;
-const bw_len = 5;
-const err_len = 5;
-const buffer_err_len = 5;
 
 function RmpcRuleClass(config) {
+    const future_seg = 4;
+    const single_chunk = 1 / 30;
+    const bw_len = 5;
+    const err_len = 5;
+    const buffer_err_len = 5;
     config = config || {};
     let context = this.context;
     let factory = dashjs.FactoryMaker;
@@ -82,10 +82,10 @@ function RmpcRuleClass(config) {
         let discount = alpha * discount1 + (1 - alpha) * discount2;
 
         future_bw = harmonic_bandwidth * discount;
-        console.log(discount1, discount2)
+        console.log(last_bw, future_bw, discount1, discount2)
         // console.log(bw_arr, bw_err, harmonic_bandwidth, discount, future_bw);
-        // return harmonic_bandwidth * discount;
-        return harmonic_bandwidth;
+        return harmonic_bandwidth * discount;
+        // return harmonic_bandwidth;
     }
 
     function playbackrate_change(currentPlaybackRate, currentLiveLatency, liveDelay, bufferLevel) {
@@ -155,7 +155,10 @@ function RmpcRuleClass(config) {
         for (i = 0; i < tmp_chunks.length; i++) {
             // console.log(i, diff_arr[1], cur_play, downtimes[i] / down_sum);
             let downtime = downtimes[i];
-            if (toadd) downtime = downtimes[i] * (1 + diff_arr[4] / down_sum);
+            if (toadd) {
+                downtime = downtimes[i] * (1 + diff_arr[4] / down_sum);
+                // downtime = Math.max(downtime, 1 / 30);
+            }
 
             let tmp_rebuf = Math.max(downtime - cur_buf / cur_play, 0);
             let tmp_min = Math.min(downtime, cur_buf / cur_play)
@@ -180,7 +183,7 @@ function RmpcRuleClass(config) {
             let bitrate_current = bitlist[i];
             let toshow = false;
             if (cur_seg == 1) toshow = false
-            let res = evolve(cur_buf, cur_latency, targetLiveDelay, cur_play, i, future_bw, chunks, next_chunks, last_flag, bitrate_current != cur_bit, toshow, true);
+            let res = evolve(cur_buf, cur_latency, targetLiveDelay, cur_play, i, future_bw, chunks, next_chunks, last_flag, bitrate_current != cur_bit, toshow, false);
             let next_buf = res.next_buf;
             let next_latency = res.next_latency;
             let next_play = res.next_play;
@@ -188,9 +191,10 @@ function RmpcRuleClass(config) {
             let downtime = res.downtime;
             let seg_qoe = 0;
 
-            if (next_latency < 1.53) seg_qoe = 0.5 * bitrate_current - bit_max * seg_rebuf - 0.05 * bit_min * next_latency - bit_min * Math.abs(next_play - 1);
-            else seg_qoe = 0.5 * bitrate_current - bit_max * seg_rebuf - 0.1 * bit_max * next_latency - bit_min * Math.abs(next_play - 1);
+            // if (next_latency < 1.53) seg_qoe = 0.5 * bitrate_current - bit_max * seg_rebuf - 0.05 * bit_min * next_latency - bit_min * Math.abs(next_play - 1);
+            // else seg_qoe = 0.5 * bitrate_current - bit_max * seg_rebuf - 0.1 * bit_max * next_latency - bit_min * Math.abs(next_play - 1);
 
+            seg_qoe = 0.5 * bitrate_current - bit_max * seg_rebuf - bit_max * Math.abs(next_latency - targetLiveDelay) - bit_max * Math.abs(next_play - 1);
             seg_qoe -= Math.abs(bitrate_current - cur_bit);
 
             // if (cur_seg == 1) console.log(cur_seg, i, bitrate_current, res);
@@ -251,7 +255,7 @@ function RmpcRuleClass(config) {
         // diff_abs = Math.min(diff_abs, Math.max(...diff_all))
         // diff_abs = Math.abs(diff_abs)
 
-        diff_arr = [diff[0], diff_avg, diff_var, diff_max, diff_abs_avg, diff_abs];
+        diff_arr = [(last_state[0] - cur_state[0]) / (cur_state[0] + 1e-9), diff_avg, diff_var, diff_max, diff_abs_avg, diff_abs];
         // console.log(diff_arr);
         return diff_arr;
     }
