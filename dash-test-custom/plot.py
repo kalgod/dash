@@ -7,7 +7,7 @@ from const import *
 import tqdm
 import json
 import sys
-# import scipy.stats
+import scipy.stats
 # from const import *
 
 lines = ['-', '--', '-.', ':', '--', '-', '-.', ':', '--', '-']
@@ -110,6 +110,13 @@ def gen(segs,trace,bw):
     qoe=bitrate_qoe-rebuf_pen-lat_pen-play_pen-switch_pen
     return len(b),np.mean(b)/1000.0,np.sum(r)/60*100,np.mean(l),np.mean(p),np.mean(f)/1000.0,qoe,bitrate_qoe,rebuf_pen,lat_pen,play_pen,switch_pen,np.mean(abs(np.array(buffer_error)))
 
+def mean_confidence_interval(data, confidence=0.95):
+    a = 1.0 * np.array(data)
+    n = len(a)
+    m, se = np.mean(a), scipy.stats.sem(a)
+    h = se * scipy.stats.t.ppf((1 + confidence) / 2., n-1)
+    return m, m-h, m+h
+
 def gen_data(dataset,labels,scenes,algs):
     avg=np.zeros((len(labels),len(scenes)))
     error=np.zeros((len(labels),2,len(scenes)))
@@ -151,29 +158,36 @@ def gen_data(dataset,labels,scenes,algs):
             l_pen.append(lat_pen1)
             p_pen.append(play_pen1)
             flu_pen.append(switch_pen1)
-        avg[i][0]=np.mean(qoe)
-        error[i][0][0]=np.mean(qoe)-np.min(qoe)
-        error[i][1][0]=np.max(qoe)-np.mean(qoe)
 
-        avg[i][1]=np.mean(b)
-        error[i][0][1]=np.mean(b)-np.min(b)
-        error[i][1][1]=np.max(b)-np.mean(b)
+        tmp_mean,tmp_min,tmp_max=mean_confidence_interval(qoe)
+        avg[i][0]=tmp_mean
+        error[i][0][0]=tmp_mean-tmp_min
+        error[i][1][0]=tmp_max-tmp_mean
 
-        avg[i][2]=np.mean(r)
-        error[i][0][2]=np.mean(r)-np.min(r)
-        error[i][1][2]=np.max(r)-np.mean(r)
+        tmp_mean,tmp_min,tmp_max=mean_confidence_interval(b)
+        avg[i][1]=tmp_mean
+        error[i][0][1]=tmp_mean-tmp_min
+        error[i][1][1]=tmp_max-tmp_mean
 
-        avg[i][3]=np.mean(l)
-        error[i][0][3]=np.mean(l)-np.min(l)
-        error[i][1][3]=np.max(l)-np.mean(l)
+        tmp_mean,tmp_min,tmp_max=mean_confidence_interval(r)
+        avg[i][2]=tmp_mean
+        error[i][0][2]=tmp_mean-tmp_min
+        error[i][1][2]=tmp_max-tmp_mean
 
-        avg[i][4]=np.mean(p)
-        error[i][0][4]=np.mean(p)-np.min(p)
-        error[i][1][4]=np.max(p)-np.mean(p)
+        tmp_mean,tmp_min,tmp_max=mean_confidence_interval(l)
+        avg[i][3]=tmp_mean
+        error[i][0][3]=tmp_mean-tmp_min
+        error[i][1][3]=tmp_max-tmp_mean
 
-        avg[i][5]=np.mean(flu)
-        error[i][0][5]=np.mean(flu)-np.min(flu)
-        error[i][1][5]=np.max(flu)-np.mean(flu)
+        tmp_mean,tmp_min,tmp_max=mean_confidence_interval(p)
+        avg[i][4]=tmp_mean
+        error[i][0][4]=tmp_mean-tmp_min
+        error[i][1][4]=tmp_max-tmp_mean
+
+        tmp_mean,tmp_min,tmp_max=mean_confidence_interval(flu)
+        avg[i][5]=tmp_mean
+        error[i][0][5]=tmp_mean-tmp_min
+        error[i][1][5]=tmp_max-tmp_mean
 
     print(dataset,avg[:,0])
     qoe_min=np.min(avg[:,0])
@@ -204,8 +218,15 @@ def plot_bar(name,avg,error,labels,scenes):
 
     plt.tick_params(labelsize=15)
     plt.grid()
-    plt.ylim(0.0, 4.5)
-    plt.yticks([0, 1, 2, 3, 4])
+    if ("fcc" in name or "oboe" in name):
+        plt.ylim(0.0, 3.0)
+        plt.yticks([0, 1,1.5, 2, 3])
+    elif ("norway" in name):
+        plt.ylim(0.0, 2.0)
+        plt.yticks([0, 1,1.5, 2])
+    else:
+        plt.ylim(0.0, 5.0)
+        plt.yticks([0, 1,1.5, 2,3,4,5])
     # plt.tight_layout()
     axs.set_xticklabels(scenes)
     # for i in axs.get_xticklabels()[:]:
@@ -223,6 +244,6 @@ def main():
     for i in range (len(datasets)):
         dataset=datasets[i]
         avg,error=gen_data(dataset,labels,scenes,algs)
-        # plot_bar("qoe_"+str(dataset),avg,error,labels,scenes)
+        plot_bar("qoe_"+str(dataset),avg,error,labels,scenes)
 
 main()
