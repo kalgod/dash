@@ -217,7 +217,7 @@ def plot_bar(name,avg,error,labels,scenes):
 def main():
     labels=["AAR","Pensieve","LoL+","L2ALL","STALLION","Dynamic","RB"]
     scenes=["QoE","Bitrates","Rebuffer","Latency","Speed","Switches"]
-    algs=["fusion-slide-rmpc","fusion-slide-pensieve","fusion-slide-lolp","fusion-slide-l2all","fusion-slide-stallion","fusion-slide-dyn","fusion-slide-rb"]
+    algs=["fusion-slide-smpc","fusion-slide-pensieve","fusion-slide-lolp","fusion-slide-l2all","fusion-slide-stallion","fusion-slide-dyn","fusion-slide-rb"]
     # algs=["fleet-slide-smpc","fleet-slide-pensieve","fleet-slide-lolp","fleet-slide-l2all","fleet-slide-stallion","fleet-slide-dyn","fleet-slide-rb"]
     datasets=TRACE
     for i in range (len(datasets)):

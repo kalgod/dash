@@ -84,8 +84,8 @@ function RmpcRuleClass(config) {
         future_bw = harmonic_bandwidth * discount;
         console.log(last_bw, future_bw, discount1, discount2)
         // console.log(bw_arr, bw_err, harmonic_bandwidth, discount, future_bw);
-        return harmonic_bandwidth * discount;
-        // return harmonic_bandwidth;
+        // return harmonic_bandwidth * discount;
+        return harmonic_bandwidth;
     }
 
     function playbackrate_change(currentPlaybackRate, currentLiveLatency, liveDelay, bufferLevel) {
@@ -183,7 +183,7 @@ function RmpcRuleClass(config) {
             let bitrate_current = bitlist[i];
             let toshow = false;
             if (cur_seg == 1) toshow = false
-            let res = evolve(cur_buf, cur_latency, targetLiveDelay, cur_play, i, future_bw, chunks, next_chunks, last_flag, bitrate_current != cur_bit, toshow, false);
+            let res = evolve(cur_buf, cur_latency, targetLiveDelay, cur_play, i, future_bw, chunks, next_chunks, last_flag, bitrate_current != cur_bit, toshow, true);
             let next_buf = res.next_buf;
             let next_latency = res.next_latency;
             let next_play = res.next_play;
@@ -389,7 +389,7 @@ function RmpcRuleClass(config) {
             console.log("running time/ms: ", mpc_end - mpc_start, next_q);
             switchRequest.quality = next_q.bit;
 
-            let tmp_state = evolve(currentBufferLevel[1], latency, targetLiveDelay, playbackRate, next_q.bit, throughput, chunks, next_chunks, flag, next_bit[next_q.bit] != currentBitrate, false, false);
+            let tmp_state = evolve(currentBufferLevel[1], latency, targetLiveDelay, playbackRate, next_q.bit, throughput, chunks, next_chunks, flag, next_bit[next_q.bit] != currentBitrate, false, true);
             last_state = [tmp_state.next_buf, tmp_state.next_latency, tmp_state.next_play, tmp_state.downtime];
             // console.log(next_q.state, last_state);
 

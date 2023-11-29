@@ -82,6 +82,12 @@ def plot_error(mea,pre,buffer_error,chunk_error):
     #outputname="BBA与MPC对比"
     outputname="./results/"+trace+"/"+bw+"/"+alg+"/error"
     band_error=(pre-mea)/(mea+1e-9)
+    buffer_error=np.array(buffer_error)
+    # for i in range(len(buffer_error)):
+    #     # print(buffer_error[i])
+    #     buffer_error[i]=min(buffer_error[i],0.2)
+    #     buffer_error[i]=max(buffer_error[i],-0.3)
+        
     # print(len(band_error),len(buffer_error),len(chunk_error))
     results_all=[band_error[:-1],buffer_error,chunk_error[:-1]]
     #outputname="reward"
@@ -127,6 +133,7 @@ def plot_error(mea,pre,buffer_error,chunk_error):
     ax.spines['top'].set_linewidth(1.5)
     plt.ylim(-1.0, 1.0)
     #plt.yticks([0., 0.25, 0.5, 0.75, 1.0])
+    # plt.xticks([0,20,21,22,23,24, 25,26,27,28,29,30,50,75,100])
     plt.ylabel('Relative Error')
     plt.grid()
     plt.xlabel('Segment')
