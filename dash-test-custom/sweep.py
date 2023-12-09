@@ -10,17 +10,17 @@ import time
 # pres=["slide","ewma"]
 # algs=["l2all","rb","lolp"]
 
-meas=["fusion"]
+meas=["fusion","fleet","imoof","moof","down","aast","seg"]
 pres=["slide"]
-algs=["rmpc"]
+algs=["smpc"]
 
 for mea in meas:
     for pre in pres:
         for alg in algs:
             cur=mea+"-"+pre+"-"+alg
-            comm="python3 run.py 0 "+cur
-            proc=subprocess.Popen(comm, shell=True)
-            (out, err) = proc.communicate()
+            # comm="python3 run.py 0 "+cur
+            # proc=subprocess.Popen(comm, shell=True)
+            # (out, err) = proc.communicate()
 
             comm="python3 show_bw.py 0 "+cur+" >"+cur+".txt"
             proc=subprocess.Popen(comm, shell=True)

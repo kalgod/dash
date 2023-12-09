@@ -4,6 +4,7 @@ import numpy as np
 import json
 import sys
 from const import *
+import scipy
 
 mode=int(sys.argv[1])
 alg=str(sys.argv[2])
@@ -260,6 +261,13 @@ def gen_bw(segs):
         chunksize.append(cur_chunksize)
     return mea,pre,buffer,chunksize
 
+def mean_confidence_interval(data, confidence=0.95):
+    a = 1.0 * np.array(data)
+    n = len(a)
+    m, se = np.mean(a), scipy.stats.sem(a)
+    h = se * scipy.stats.t.ppf((1 + confidence) / 2., n-1)
+    return m, m-h, m+h
+
 def gen(segs,trace,bw):
     bit_max=6000
     bit_min=200
@@ -372,6 +380,8 @@ for trace in traces:
         p_pen.append(play_pen1)
         flu_pen.append(switch_pen1)
         print(trace,bw,"{:.2f}\t,{:.2f}\t,{:.2f}\t,{:.2f}\t,{:.2f}\t,{:.2f}\t,{:.2f},{:.2f}".format(len1,b1,r1,l1,p1,f1,qoe1,buffer1))
+    res,res1,res2=mean_confidence_interval(buffer)
+    print(res,res2-res)
     print("done for",trace,"b,r,l,p,f,qoe: bit: {:.4f}\t,+{:.4f}\t,-{:.4f}\t,rebuf: {:.4f}\t,+{:.4f}\t,-{:.4f}\t,latency: {:.4f}\t,+{:.4f}\t,-{:.4f}\t,play: {:.4f}\t,+{:.4f}\t,-{:.4f}\t,switch: {:.4f}\t,+{:.4f}\t,-{:.4f}\t,qoe: {:.4f}\t,+{:.4f}\t,-{:.4f}\t,{:.4f}\t,{:.4f}\t,{:.4f}\t,{:.4f}\t,{:.4f}\t,{:.4f} \n".format(
         np.mean(b),np.max(b)-np.mean(b),np.min(b)-np.mean(b),np.mean(r),np.max(r)-np.mean(r),np.min(r)-np.mean(r),np.mean(l),np.max(l)-np.mean(l),np.min(l)-np.mean(l),np.mean(p),np.max(p)-np.mean(p),np.min(p)-np.mean(p),np.mean(flu),np.max(flu)-np.mean(flu),np.min(flu)-np.mean(flu),np.mean(qoe),np.max(qoe)-np.mean(qoe),np.min(qoe)-np.mean(qoe),np.mean(b_qoe),np.mean(r_pen),np.mean(l_pen),np.mean(p_pen),np.mean(flu_pen),np.mean(buffer)))
 print("all done")

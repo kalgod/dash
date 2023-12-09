@@ -7,6 +7,7 @@ from const import *
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import plot, savefig
 import matplotlib
+import scipy
 
 mode=int(sys.argv[1])
 alg=str(sys.argv[2])
@@ -134,6 +135,13 @@ def plot_cdf(data):
     plt.xlabel("Bandwidth/Kbps")
     savefig("./figs/dataset.pdf")
 
+def mean_confidence_interval(data, confidence=0.95):
+    a = 1.0 * np.array(data)
+    n = len(a)
+    m, se = np.mean(a), scipy.stats.sem(a)
+    h = se * scipy.stats.t.ppf((1 + confidence) / 2., n-1)
+    return m, m-h, m+h
+
 
 if (mode==0):
     traces=TRACE
@@ -157,13 +165,18 @@ for trace in traces:
         mea,pre=gen(segs)
         cha,cha1,real_bw=comp(mea,pre,trace,bw)
         # print(100*cha,100*cha1)
-        cha_all.append(cha)
-        cha1_all.append(cha1)
+        cha_all.append(100*cha)
+        cha1_all.append(100*cha1)
         bw_all.extend(real_bw)
         # print(segs,segs.keys())
         # print(trace,bw,cha,cha1)
     print("done for",trace)
     data.append(bw_all)
-    if (len(cha_all)!=0): print("mea and pre and bw: ",100*np.mean(cha_all),100*np.mean(cha1_all),np.mean(bw_all))
+    res,res1,res2=mean_confidence_interval(cha_all,0.95)
+    res3,res4,res5=mean_confidence_interval(cha1_all,0.95)
+    if (len(cha_all)!=0): print("mea and pre and bw: ",res,res2-res,res3,res5-res3,np.mean(bw_all))
 plot_cdf(data)
+for i in range (len(data)):
+    tmp=data[i]
+    print(i,"\n",np.mean(tmp),np.std(tmp),np.percentile(tmp,25),np.percentile(tmp,50),np.percentile(tmp,75))
 print("all done")

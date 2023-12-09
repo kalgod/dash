@@ -118,8 +118,8 @@ def mean_confidence_interval(data, confidence=0.95):
     return m, m-h, m+h
 
 def gen_data(dataset,labels,scenes,algs):
-    avg=np.zeros((len(labels),len(scenes)))
-    error=np.zeros((len(labels),2,len(scenes)))
+    avg=np.zeros((len(algs),len(scenes)))
+    error=np.zeros((len(algs),2,len(scenes)))
 
     for i in range(len(algs)):
         alg=algs[i]
@@ -193,7 +193,7 @@ def gen_data(dataset,labels,scenes,algs):
     qoe_min=np.min(avg[:,0])
     avg[:,0]/=qoe_min
     error[:,:,0]/=qoe_min
-    print(dataset,avg[:,0],avg[0,0]-avg[2,0],"\n")
+    print(dataset,avg[:,0],error[:,:,0],avg[0,0]-avg[2,0],"\n")
     return avg,error
         
 
@@ -214,7 +214,7 @@ def plot_bar(name,avg,error,labels,scenes):
     # plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.4), ncol=len(labels),fontsize=15)
 
     axs.set_xticks(x)
-    axs.set_ylabel('Normalized Value', fontsize=15)
+    axs.set_ylabel('Value', fontsize=15)
 
     plt.tick_params(labelsize=15)
     plt.grid()
@@ -237,8 +237,8 @@ def plot_bar(name,avg,error,labels,scenes):
 
 def main():
     labels=["AAR","Pensieve","LoL+","L2ALL","STALLION","Dynamic","RB"]
-    scenes=["QoE","Bitrates","Rebuffer","Latency","Speed","Switches"]
-    algs=["fusion-slide-smpc","fusion-slide-pensieve","fusion-slide-lolp","fusion-slide-l2all","fusion-slide-stallion","fusion-slide-dyn","fusion-slide-rb"]
+    scenes=["N-QoE","Bitrates","Rebuffer","Latency","Speed","Switches"]
+    algs=["fusion-slide-smpc","fusion-slide-pensieve","fusion-slide-lolp","fusion-slide-l2all","fusion-slide-stallion","fusion-slide-dyn","fusion-slide-rb","fleet-slide-smpc","fleet-slide-pensieve","fleet-slide-lolp","fleet-slide-l2all","fleet-slide-stallion","fleet-slide-dyn","fleet-slide-rb"]
     # algs=["fleet-slide-smpc","fleet-slide-pensieve","fleet-slide-lolp","fleet-slide-l2all","fleet-slide-stallion","fleet-slide-dyn","fleet-slide-rb"]
     datasets=TRACE
     for i in range (len(datasets)):
