@@ -1,0 +1,12 @@
+Traceback (most recent call last):
+  File "/home/cjh/work/dash-ll-server/dash_server.py", line 555, in <module>
+    main(sys.argv)
+  File "/home/cjh/work/dash-ll-server/dash_server.py", line 552, in main
+    server.serve_forever()
+  File "/home/cjh/anaconda3/lib/python3.11/socketserver.py", line 233, in serve_forever
+    ready = selector.select(poll_interval)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/cjh/anaconda3/lib/python3.11/selectors.py", line 415, in select
+    fd_event_list = self._selector.poll(timeout)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt
